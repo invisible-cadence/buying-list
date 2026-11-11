@@ -1,0 +1,5 @@
+# Normalise line endings, so files look the same on Windows, macOS and Linux.
+* text=auto
+
+# Shell scripts must keep Unix line endings, or they fail to run on Windows.
+.githooks/* text eol=lf

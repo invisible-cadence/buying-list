@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+
+# Cloudflare Wrangler local state
+.wrangler/
+
+# Local secrets and settings. Never commit these.
+# The matching .example files hold placeholders and are committed.
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+!.dev.vars.example
+!.env.example
+
+# Logs
+*.log
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
