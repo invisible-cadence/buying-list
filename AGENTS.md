@@ -42,8 +42,9 @@ An instruction to an agent and a review of a PR are habits, not safeguards. Thes
 
 ### Separation
 
-- Work only in this repository. Do not add or read any other repository.
-- Do not copy text from private notes or private planning documents into this repository. Write what is needed fresh.
+- Work in this repository. The one exception is the public profile repository, `invisible-cadence/invisible-cadence`: update the project list there when the owner asks, for example when a project's status changes.
+- Never bring content from a private repository, private notes or private planning documents into a public one. Write what is needed fresh.
+- Keep personal details out of everything an agent can read: project instructions, shared memory and chat. An agent cannot publish what it has never seen, and this is the main protection for work pushed by agents.
 - Tests, seed data, demos, screenshots and examples use invented data only. Never ask for, use or reproduce real list data.
 
 ### Identity
@@ -78,6 +79,7 @@ An instruction to an agent and a review of a PR are habits, not safeguards. Thes
 
 1. Scan the whole change for secrets and personal details: the diff, file names, commit messages, the branch name, and the PR title and description.
 2. On the owner's computer, the pre-push check in `.githooks/` refuses a push with the wrong author or with a term from a private list. The list lives outside the repository. Never ask for its contents, and never weaken or skip the check.
+   If you change the check, run `sh tests/pre-push.test.sh` and add a case for the new behaviour.
 3. GitHub push protection blocks recognised secret formats. It does not recognise personal details.
 4. Cloud agent sessions do not run the pre-push check, so step 1 is the only check there. Do it every time and say in the PR that you did.
 
@@ -141,5 +143,5 @@ Git:
 
 This is the first Invisible Cadence project, so this file is the reference copy of the working rules.
 
-- For a second project, copy this file, `CLAUDE.md`, `SECURITY.md`, `.gitignore`, `.gitattributes` and `.githooks/` into the new repository and adjust what is specific to this one.
+- For a second project, copy this file, `CLAUDE.md`, `SECURITY.md`, `.gitignore`, `.gitattributes`, `.githooks/` and `tests/pre-push.test.sh` into the new repository and adjust what is specific to this one.
 - When a third project starts, move the shared files into a `project-template` repository and create new projects from it, so the rules have one home again.

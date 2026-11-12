@@ -50,5 +50,6 @@ When research is run on an item, that item's title, notes and links are sent to 
 ## Keeping this repository clean
 
 - Tests, examples, demos and screenshots use invented data.
-- A pre-push check refuses a push that carries the wrong commit author or a term from a private list. See the README.
+- Agents working here are given no private material, so they have nothing personal to publish.
+- On the maintainer's own computer, a pre-push check refuses a push that carries the wrong commit author or a term from a private list. See the README.
 - GitHub secret scanning and push protection are enabled.
