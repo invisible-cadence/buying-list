@@ -21,6 +21,10 @@ The project is built in the open, one reviewed pull request at a time, with AI c
 
 Everything pushed to a public repository is public straight away, so this repository includes a check that runs on your own computer before anything leaves it.
 
+**What it covers:** pushes made with `git push` from a computer where you have set it up. Nothing else.
+
+**What it does not cover:** pushes made by cloud coding agents, and anything typed on github.com. Those rely on a different protection: agents working here are given no private material to begin with. See "Separation" in [`AGENTS.md`](AGENTS.md).
+
 It refuses a push if a commit:
 
 - was written under the wrong name or email, or
@@ -55,16 +59,24 @@ Do this once for each copy of the repository. On Windows, run the commands in Gi
    git config prepush.termsFile "/path/to/your/file"
    ```
 
-### Check that it works
+### Run the tests
+
+The check has its own tests. They build a throwaway repository in a temporary folder, with made-up terms, and try thirteen pushes. Nothing touches this repository, GitHub or your real list.
+
+```bash
+sh tests/pre-push.test.sh
+```
+
+The last line should read `13 passed, 0 failed`.
+
+### Check that it works for you
 
 Make a throwaway commit containing one of your terms on a test branch, and try to push it. The push should be refused, and nothing is sent. Then delete the test branch.
 
-### What it does not cover
+### Other limits
 
-- Text typed on github.com, such as pull request descriptions and comments.
-- Images and other binary files.
-- Pushes made from anywhere the check is not set up, including cloud coding agents.
-- Details that are not on your list.
+- It cannot read images or other binary files.
+- It only knows the terms on your list.
 
 It can be skipped with `git push --no-verify`. Do not do that.
 

@@ -3,3 +3,4 @@
 
 # Shell scripts must keep Unix line endings, or they fail to run on Windows.
 .githooks/* text eol=lf
+*.sh text eol=lf
