@@ -1,0 +1,100 @@
+#!/bin/sh
+# Pre-push check for a public repository.
+#
+# Git runs this automatically before every `git push`. It refuses the push if
+# a commit that is about to become public:
+#   1. was written under the wrong name or email, or
+#   2. contains a term from your private list (in its changes, file names,
+#      commit message or branch name).
+#
+# This script contains no private terms. It reads them from a file that lives
+# outside the repository. See README.md, "Pre-push check", for setup.
+
+remote="$1"
+zero="0000000000000000000000000000000000000000"
+
+expected_name=$(git config --get prepush.authorName)
+expected_email=$(git config --get prepush.authorEmail)
+terms_file=$(git config --get prepush.termsFile)
+[ -n "$terms_file" ] || terms_file="$HOME/.private-terms.txt"
+
+fail() {
+    echo "pre-push check: $1" >&2
+    failed=1
+}
+
+# Fail closed: if the check is not set up, nothing is pushed.
+if [ -z "$expected_name" ] || [ -z "$expected_email" ]; then
+    echo "pre-push check: the expected commit identity is not set." >&2
+    echo "Run:" >&2
+    echo "  git config prepush.authorName \"YOUR PUBLIC NAME\"" >&2
+    echo "  git config prepush.authorEmail \"YOUR PUBLIC EMAIL\"" >&2
+    exit 1
+fi
+if [ ! -f "$terms_file" ]; then
+    echo "pre-push check: private terms file not found at: $terms_file" >&2
+    echo "Create it with one term per line, or point to it with:" >&2
+    echo "  git config prepush.termsFile \"/path/to/your/file\"" >&2
+    exit 1
+fi
+
+tmp=$(mktemp -d) || exit 1
+trap 'rm -rf "$tmp"' EXIT
+
+# Clean the list: drop Windows line endings, comments and blank lines.
+# A blank line would match everything, so it must never reach grep.
+tr -d '\r' < "$terms_file" | grep -v '^[[:space:]]*#' | grep -v '^[[:space:]]*$' > "$tmp/terms"
+if [ ! -s "$tmp/terms" ]; then
+    echo "pre-push check: $terms_file has no terms in it." >&2
+    exit 1
+fi
+
+failed=0
+cat > "$tmp/refs"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    # Deleting a remote branch publishes nothing.
+    [ "$local_sha" = "$zero" ] && continue
+
+    # Which commits would this push make public for the first time?
+    if [ "$remote_sha" = "$zero" ]; then
+        git rev-list "$local_sha" --not --remotes="$remote" > "$tmp/commits"
+    else
+        git rev-list "$remote_sha..$local_sha" > "$tmp/commits"
+    fi
+
+    # The branch name is public too.
+    if printf '%s\n' "$remote_ref" | grep -i -q -F -f "$tmp/terms"; then
+        fail "the branch name contains a private term: $remote_ref"
+    fi
+
+    while read -r commit; do
+        short=$(git rev-parse --short "$commit")
+
+        # 1. Identity.
+        for who in "%an|%ae|author" "%cn|%ce|committer"; do
+            fmt=${who%|*}
+            role=${who##*|}
+            actual=$(git log -1 --format="$fmt" "$commit")
+            if [ "$actual" != "$expected_name|$expected_email" ]; then
+                fail "commit $short has the wrong $role: ${actual%|*} <${actual#*|}>"
+            fi
+        done
+
+        # 2. Private terms. Scan the message, the file names and the added
+        # lines. Removed lines are skipped, so a commit that deletes a term
+        # is not blocked.
+        git show --format='%B' --patch -m "$commit" | grep -v '^-' > "$tmp/text"
+        if grep -i -n -F -f "$tmp/terms" "$tmp/text" > "$tmp/hits"; then
+            fail "commit $short contains a private term:"
+            sed 's/^/    /' "$tmp/hits" | cut -c1-160 >&2
+        fi
+    done < "$tmp/commits"
+done < "$tmp/refs"
+
+if [ "$failed" -ne 0 ]; then
+    echo >&2
+    echo "Push refused. Nothing was sent. Fix the commits above and try again." >&2
+    exit 1
+fi
+exit 0
