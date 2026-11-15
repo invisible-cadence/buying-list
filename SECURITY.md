@@ -23,7 +23,7 @@ The app is not built yet. This section is the design that the code has to meet, 
 - **Automations:** each automated caller has its own Cloudflare Access service token, which can be revoked without affecting anyone's sign-in. The reminders caller can reach one read-only endpoint.
 - **Private items:** an item marked private is visible only to the person who added it. This is enforced in the API and covered by a test.
 - **Untrusted content:** web pages and model output are treated as untrusted. Model output is validated against a fixed structure, and only `http` and `https` links are stored.
-- **Spending:** the Claude API key is used only by this app and has a monthly spend limit.
+- **Spending:** the Claude API key is used only by this app and is paid for from a small prepaid balance with auto-reload off, so the balance is the cap on spending.
 - **Demo:** the public demo has no sign-in, no secrets, no API key and no real database. It shows invented data only.
 
 ## Where secrets live

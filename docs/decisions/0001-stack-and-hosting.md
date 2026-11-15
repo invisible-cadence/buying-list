@@ -65,14 +65,14 @@ Option A.
 
 ## Costs
 
-Checked on 10 November 2026.
+Checked on 10 November 2026. The Access and Claude rows were checked again on 15 November 2026, during setup.
 
 | Item | Cost | Source |
 | --- | --- | --- |
 | Cloudflare Workers, free plan | 0. Includes 100,000 requests a day. Requests for static assets are free. | [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) |
 | Cloudflare D1, free plan | 0. Includes 5 million rows read and 100,000 rows written a day, and 5 GB of storage. | [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/) |
-| Cloudflare Access | Expected to be 0 at this size. Not yet confirmed against Cloudflare's own plan page; to be checked when the account is created. | [Cloudflare Access](https://www.cloudflare.com/en-au/products/cloudflare-access) |
-| Claude API | The only running cost. Web search is US$10 per 1,000 searches plus tokens, and web fetch has no extra charge. Estimated at one to two US dollars a month for occasional use. A monthly spend limit caps it. | [Claude API pricing](https://platform.claude.com/docs/en/about-claude/pricing), [spend limits](https://platform.claude.com/docs/en/api/rate-limits) |
+| Cloudflare Access | 0. The Zero Trust Free plan is $0 per seat, with a limit of 50 seats. A card must be on file to choose it, and no charge is expected. | The plan chooser in the Cloudflare dashboard, 15 November 2026. See also [Cloudflare Access](https://www.cloudflare.com/en-au/products/cloudflare-access). |
+| Claude API | The only running cost. Web search is US$10 per 1,000 searches plus tokens, and web fetch has no extra charge. Estimated at one to two US dollars a month for occasional use. The Claude Console offers prepaid credits only, and an Individual account has no spend-limit setting, so the cap is the prepaid balance with auto-reload switched off. Credits expire after one year. Buy about $5 only when Phase 5 needs it, and look in the Console again for a spend-limit setting before then. | [Claude API pricing](https://platform.claude.com/docs/en/about-claude/pricing), [spend limits](https://platform.claude.com/docs/en/api/rate-limits), and the Claude Console billing page, 15 November 2026 |
 | n8n | Depends on how you run it. Not a new cost for this project. | |
 
 The Claude figure is an estimate and will be replaced with a measured one after Phase 5.
@@ -82,5 +82,6 @@ The Claude figure is an estimate and will be replaced with a measured one after 
 - The free plans changing so that this scale is no longer covered.
 - A needed library that cannot run on Workers.
 - Access no longer being free for a household-sized group.
+- Cloudflare billing showing a charge that this decision did not expect. Phase 1 includes a check of its spend limits and notifications.
 
 Because the data is plain SQLite and the API is ordinary HTTP, moving to option C later would mean rewriting the hosting, not the app.
