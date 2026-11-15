@@ -60,11 +60,24 @@ You need a free [Cloudflare account](https://dash.cloudflare.com/sign-up) with C
 3. Create the table: `npm run db:migrate:remote`.
 4. Deploy: `npm run deploy`. Until step 6 is done the app answers every request with an error, because it refuses to run without its sign-in settings.
 5. Put Cloudflare Access in front of the Worker. In the Cloudflare dashboard, open the Worker's settings, find its `workers.dev` address and turn on Cloudflare Access. Then, in Zero Trust under Access, open the new application and make sure the policy lists only the people who may use the app.
-6. Give the Worker its two sign-in settings, which name your own account and so are not kept in this repository. Wrangler asks for each value.
-   - `npx wrangler secret put TEAM_DOMAIN`: your team address, such as `https://YOUR-TEAM.cloudflareaccess.com`.
+6. Give the Worker its two sign-in settings, which name your own account and so are not kept in this repository. Wrangler asks for each value, and the characters do not show as you paste.
+   - `npx wrangler secret put TEAM_DOMAIN`: your team address, such as `https://YOUR-TEAM.cloudflareaccess.com`. The team name is the one you chose when you set up Zero Trust, shown in its settings and in the address bar of the sign-in page. Start with `https://` and put nothing after the name.
    - `npx wrangler secret put POLICY_AUD`: the Application Audience (AUD) tag, shown on the Access application's overview.
 
 Open the Worker's address. You should be asked to sign in, and then see the list.
+
+### If you are refused after signing in
+
+The Worker logs why it refused a request, and never tells the visitor. Read the log with:
+
+```bash
+npx wrangler tail buying-list --format pretty
+```
+
+Then reload the page and look for a line starting `Access token refused` or `Access check is not configured`. Two common causes:
+
+- `Expected 200 OK from the JSON Web Key Set HTTP response`: `TEAM_DOMAIN` is not your team address. Open `YOUR-TEAM-ADDRESS/cdn-cgi/access/certs` in a browser. It should show JSON containing `keys`.
+- A message about the `aud` claim: `POLICY_AUD` belongs to a different Access application.
 
 ## Configuration
 

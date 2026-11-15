@@ -72,6 +72,8 @@ Before the first step:
 
 **Done when:** an item added from a phone's browser is still there after a refresh, and a visitor who is not signed in gets nothing.
 
+**Result:** checked on 15 November 2026. An item added from a phone's browser was still there after a refresh and showed on a laptop, and a signed-out request was redirected to the Cloudflare login and received no data. The project uses Node 24 (Node 22 ends on 30 April 2027).
+
 ### Phase 2: Core list
 
 The real data model and a list worth using.
