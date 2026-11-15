@@ -24,6 +24,17 @@ export const remoteKeys: KeySource = (teamDomain) => {
   return keys;
 };
 
+/**
+ * Cleans up the team address and checks it has the right shape: https://,
+ * then a host name, and nothing after it. Returns null when it does not.
+ * Spaces and trailing slashes are the easy mistakes to make when pasting it in,
+ * so they are forgiven. Anything else is reported rather than guessed at.
+ */
+export function normaliseTeamDomain(value: string): string | null {
+  const cleaned = value.trim().replace(/\/+$/, "");
+  return /^https:\/\/[^/\s]+$/.test(cleaned) ? cleaned : null;
+}
+
 function isLocalRequest(request: Request): boolean {
   const { hostname } = new URL(request.url);
   return hostname === "localhost" || hostname === "127.0.0.1";
@@ -47,9 +58,18 @@ export function requireAccess(keySource: KeySource = remoteKeys) {
       return next();
     }
 
-    const { TEAM_DOMAIN: teamDomain, POLICY_AUD: audience } = c.env;
-    if (!teamDomain || !audience) {
+    const { TEAM_DOMAIN: rawTeamDomain, POLICY_AUD: audience } = c.env;
+    if (!rawTeamDomain || !audience) {
       console.error("Access check is not configured: TEAM_DOMAIN or POLICY_AUD is missing.");
+      return c.json({ error: "Server is not configured." }, 500);
+    }
+
+    const teamDomain = normaliseTeamDomain(rawTeamDomain);
+    if (!teamDomain) {
+      console.error(
+        "Access check is not configured: TEAM_DOMAIN must be https:// followed by the team " +
+          "address only, with no path after it.",
+      );
       return c.json({ error: "Server is not configured." }, 500);
     }
 

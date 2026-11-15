@@ -1,5 +1,6 @@
 import { generateKeyPair, SignJWT, type CryptoKey } from "jose";
 import { beforeAll, describe, expect, it } from "vitest";
+import { normaliseTeamDomain } from "./access";
 import { createApp } from "./index";
 import type { Bindings } from "./env";
 
@@ -113,5 +114,27 @@ describe("the local development switch", () => {
   it("does nothing for localhost when switched off", async () => {
     const off = bindings({ TEAM_DOMAIN: undefined, POLICY_AUD: undefined });
     expect((await request(undefined, off, "http://localhost:5173/")).status).toBe(500);
+  });
+});
+
+describe("the team address", () => {
+  it("forgives spaces and trailing slashes", () => {
+    expect(normaliseTeamDomain(`  ${TEAM_DOMAIN}/ \n`)).toBe(TEAM_DOMAIN);
+  });
+
+  it("rejects a value that is not https:// and a host name alone", () => {
+    expect(normaliseTeamDomain("example-team.cloudflareaccess.com")).toBeNull();
+    expect(normaliseTeamDomain("http://example-team.cloudflareaccess.com")).toBeNull();
+    expect(normaliseTeamDomain(`${TEAM_DOMAIN}/cdn-cgi/access/certs`)).toBeNull();
+  });
+
+  it("still accepts a valid token when the address has a trailing slash", async () => {
+    const env = bindings({ TEAM_DOMAIN: `${TEAM_DOMAIN}/` });
+    expect((await request(await sign(), env)).status).toBe(200);
+  });
+
+  it("refuses everyone when the address has the wrong shape", async () => {
+    const env = bindings({ TEAM_DOMAIN: "example-team.cloudflareaccess.com" });
+    expect((await request(await sign(), env)).status).toBe(500);
   });
 });
