@@ -19,7 +19,7 @@
     {
       "binding": "DB",
       "database_name": "buying-list",
-      "database_id": "YOUR_D1_DATABASE_ID_HERE",
+      "database_id": "7de38ef0-2e17-47a8-a3b6-cffb3ef7c309",
       "migrations_dir": "migrations",
     },
   ],
