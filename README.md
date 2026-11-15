@@ -4,14 +4,87 @@ A shared household buying list, installed on your phone, that tracks things from
 
 ## Status
 
-Early setup. There is no app code yet. This repository currently holds the plan, the working rules and the safeguards that come before the first line of code.
+Phase 1 of the [roadmap](ROADMAP.md), the walking skeleton: a page with a text box and an Add button, a list underneath, and a database behind it, all behind sign-in. Items can be added and listed. Nothing else works yet.
 
 - [`ROADMAP.md`](ROADMAP.md): what is being built, in what order.
 - [`docs/decisions/`](docs/decisions/): why it is being built this way, and what else was considered.
 - [`SECURITY.md`](SECURITY.md): how the app and this repository are protected, and how to report a problem.
 - [`AGENTS.md`](AGENTS.md): the rules that AI coding agents follow here.
 
-This README will grow into a full guide, with setup steps for running your own copy, as the app takes shape.
+This README will grow into a full guide as the app takes shape.
+
+## How it works
+
+One Cloudflare Worker does everything the server side needs to do.
+
+```
+browser ──▶ Cloudflare Access (sign-in) ──▶ Worker ──▶ D1 database
+                                              │
+                                              └──▶ the front end's files
+```
+
+- `src/`: the front end, written in React and built by Vite.
+- `worker/`: the Worker. It uses [Hono](https://hono.dev) for the API routes, checks the Access token on every request, and hands everything that is not an API call to the front end's files.
+- `migrations/`: the database's tables, as numbered SQL files.
+- `wrangler.jsonc`: tells Cloudflare what the Worker is and what it is connected to.
+
+The API has two routes so far: `GET /api/items` lists the items, newest first, and `POST /api/items` adds one.
+
+## Set up and run on your own computer
+
+You need [Node.js](https://nodejs.org) 24 or newer (the version is in `.nvmrc`) and Git. On Windows, run the commands in Git Bash.
+
+```bash
+npm install
+cp .dev.vars.example .dev.vars    # local settings, ignored by git
+npm run db:migrate:local          # creates the local database
+npm run dev                       # opens the app on http://localhost:5173
+```
+
+Locally the sign-in check is skipped, and only for requests to `localhost`. That is the `DEV_SKIP_ACCESS` line in `.dev.vars`.
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Runs the app locally, with a local database. |
+| `npm run check` | Type check, lint, format check and tests: everything the GitHub check runs. |
+| `npm run format` | Fixes formatting. |
+| `npm run build` | Builds the front end and the Worker into `dist/`. |
+| `npm run deploy` | Builds, then deploys with Wrangler. |
+
+## Deploy your own copy
+
+You need a free [Cloudflare account](https://dash.cloudflare.com/sign-up) with Cloudflare Zero Trust set up (the free plan covers up to 50 people).
+
+1. Sign in: `npx wrangler login`.
+2. Create the database: `npx wrangler d1 create buying-list`. Copy the `database_id` it prints into `wrangler.jsonc`.
+3. Create the table: `npm run db:migrate:remote`.
+4. Deploy: `npm run deploy`. Until step 6 is done the app answers every request with an error, because it refuses to run without its sign-in settings.
+5. Put Cloudflare Access in front of the Worker. In the Cloudflare dashboard, open the Worker's settings, find its `workers.dev` address and turn on Cloudflare Access. Then, in Zero Trust under Access, open the new application and make sure the policy lists only the people who may use the app.
+6. Give the Worker its two sign-in settings, which name your own account and so are not kept in this repository. Wrangler asks for each value.
+   - `npx wrangler secret put TEAM_DOMAIN`: your team address, such as `https://YOUR-TEAM.cloudflareaccess.com`.
+   - `npx wrangler secret put POLICY_AUD`: the Application Audience (AUD) tag, shown on the Access application's overview.
+
+Open the Worker's address. You should be asked to sign in, and then see the list.
+
+## Configuration
+
+| Setting | Where it is set | What it is |
+| --- | --- | --- |
+| `database_id` | `wrangler.jsonc` | Which D1 database the Worker uses. |
+| `TEAM_DOMAIN` | Worker secret | Your Access team address. |
+| `POLICY_AUD` | Worker secret | The Access application's audience tag. |
+| `DEV_SKIP_ACCESS` | `.dev.vars` | Local development only. Skips the sign-in check for `localhost`. |
+
+## Costs
+
+Nothing, on the free plans of Cloudflare Workers, D1 and Access. The figures and their sources are in [decision 0001](docs/decisions/0001-stack-and-hosting.md).
+
+## Limitations
+
+- There is no way yet to edit, remove or mark an item as bought.
+- Everyone who can sign in sees the same list, and the app does not yet record who added what.
+- Titles are the only data an item has.
+- The tests cover the sign-in check and the input checks. The database queries are tried by hand, and are not yet covered by automated tests.
 
 ## How this is built
 

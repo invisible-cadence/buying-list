@@ -28,7 +28,7 @@ The reasons are in [`docs/decisions/0001-stack-and-hosting.md`](docs/decisions/0
 | Phase | What | Status |
 | --- | --- | --- |
 | 0 | Setup and security baseline | Done |
-| 1 | Walking skeleton, behind sign-in | Not started |
+| 1 | Walking skeleton, behind sign-in | In review |
 | 2 | Core list | Not started |
 | 3 | Several people, private items, install on a phone | Not started |
 | | Pause: two to three weeks of real use | |
