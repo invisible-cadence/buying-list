@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "buying-list",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-11-15",
+  "workers_dev": true,
+  // Preview URLs are extra public addresses for each version of the Worker.
+  // The app does not need them, so they stay off.
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "assets": {
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Run the Worker for every request, including the front end's files, so
+    // that the Access token is checked on all of them. See worker/index.ts.
+    "run_worker_first": true,
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "buying-list",
+      "database_id": "YOUR_D1_DATABASE_ID_HERE",
+      "migrations_dir": "migrations",
+    },
+  ],
+  // Two more settings are needed, and are not kept in this file because they
+  // name your own Cloudflare account. Set them as Worker secrets:
+  //   TEAM_DOMAIN  your Access team address, e.g. https://YOUR-TEAM.cloudflareaccess.com
+  //   POLICY_AUD   the Application Audience (AUD) tag of your Access application
+  // See the README.
+}
