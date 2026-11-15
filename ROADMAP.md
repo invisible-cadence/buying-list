@@ -16,7 +16,7 @@ The first goal is something that works and can be tested in real life. The app i
 
 - **Stack:** TypeScript throughout, on Cloudflare: Workers for the API, D1 for the database, static assets for the front end. React with Vite, and Hono for the API.
 - **Sign-in:** Cloudflare Access in front of the app from the first deployment.
-- **Research:** the Claude API with web search and web fetch, with a monthly spend limit.
+- **Research:** the Claude API with web search and web fetch. The cost is capped by a small prepaid balance with auto-reload off.
 - **Reminders:** n8n on a schedule, calling the app.
 - **Deploying:** by hand with `wrangler deploy`.
 - **One household per deployment.** Anyone else runs their own copy from this repository.
@@ -27,7 +27,7 @@ The reasons are in [`docs/decisions/0001-stack-and-hosting.md`](docs/decisions/0
 
 | Phase | What | Status |
 | --- | --- | --- |
-| 0 | Setup and security baseline | In progress |
+| 0 | Setup and security baseline | Done |
 | 1 | Walking skeleton, behind sign-in | Not started |
 | 2 | Core list | Not started |
 | 3 | Several people, private items, install on a phone | Not started |
@@ -44,15 +44,23 @@ Accounts, tools and safeguards, before any app code.
 - Repository files: licence, agent instructions, security policy, ignore list and this roadmap.
 - A pre-push check that refuses a push with the wrong commit author or a private term.
 - A ruleset on `main`: changes arrive through pull requests only.
-- Accounts for Cloudflare and the Claude API, with a spend limit on the API from day one.
+- Accounts for Cloudflare and the Claude API. The API has no spend-limit setting on an Individual account, so Phase 5 is capped by a small prepaid balance with auto-reload off. No credit is bought until then.
 - Local tools: Node.js, Git and Wrangler.
 - Cloudflare's starter Worker deployed with Access in front of it, to prove the toolchain.
 
 **Done when:** a "hello" page is live, only the allowed people can open it, and a test push containing a private term is refused.
 
+**Result:** done on 15 November 2026. The ruleset on `main` is set, the pre-push check is verified, the hello page is live behind Access, and Node 22, npm 11 and Wrangler are in use. The hello page is a throwaway Worker deployed from a scratch folder outside this repository.
+
 ### Phase 1: Walking skeleton
 
 The thinnest version that runs end to end: type an item, save it, see it in a list, on a live address behind sign-in.
+
+Before the first step:
+
+- Check the end-of-life date for Node 22, believed to be spring 2027, and decide whether to start on a newer version.
+- Once the real app is deployed, delete the throwaway hello Worker from Phase 0.
+- Once the Worker exists, check Cloudflare Billing for spend limits and notifications, and look again after the first month.
 
 1. Project structure at the root of the repository: a React front end built with Vite, and an API on a Worker using Hono.
 2. One D1 table, `items`, created through a migration file.
@@ -102,11 +110,13 @@ Use the app for two to three weeks before building more. Note what is annoying, 
 
 Press "Research" on an item and get back a short, sourced shortlist.
 
+Before starting: buy about $5 of Claude API credit, keep auto-reload off, and look in the Claude Console again for a spend-limit setting. Credits expire after one year.
+
 - **Compare these:** the item has candidate links. Claude reads each page and compares them against the item's notes.
 - **Find options:** the item has no links. Claude searches the web and proposes a budget, a middle and a premium option.
 - Search is localised to a configured country. Currency, delivery rules and preferred shops live in configuration, not code.
 - Claude returns structured data that the code validates. Every option has a name, price, shop, link, pros, cons and a "checked on" date, and every claim links to its source.
-- Cost controls: a cap on searches per request, a monthly spend limit, and research runs only when asked.
+- Cost controls: a cap on searches per request, the prepaid balance as the monthly cap (plus a spend limit if the Console offers one by then), and research runs only when asked.
 
 **Done when:** a request such as "a quiet kettle under 60" returns three options from shops that deliver to the configured country, with links that work.
 
