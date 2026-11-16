@@ -48,6 +48,11 @@ describe("POST /api/items", () => {
     expect((await post('{"title":"Kettle"}', "text/plain")).status).toBe(415);
   });
 
+  it("accepts the content type in any letter case", async () => {
+    // Valid type, invalid body: the answer is 400 (bad body), not 415 (bad type).
+    expect((await post("not json", "Application/JSON; charset=utf-8")).status).toBe(400);
+  });
+
   it("refuses an empty title", async () => {
     const response = await post('{"title":"  "}');
     expect(response.status).toBe(400);

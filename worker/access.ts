@@ -27,12 +27,15 @@ export const remoteKeys: KeySource = (teamDomain) => {
 /**
  * Cleans up the team address and checks it has the right shape: https://,
  * then a host name, and nothing after it. Returns null when it does not.
- * Spaces and trailing slashes are the easy mistakes to make when pasting it in,
- * so they are forgiven. Anything else is reported rather than guessed at.
+ * Spaces, capital letters and trailing slashes are the easy mistakes to make
+ * when pasting it in, so they are forgiven. Host names are not case sensitive,
+ * but the token's issuer is compared as text and Access writes it in lower
+ * case. Anything else, such as a path, query, port or user name, is reported
+ * rather than guessed at.
  */
 export function normaliseTeamDomain(value: string): string | null {
-  const cleaned = value.trim().replace(/\/+$/, "");
-  return /^https:\/\/[^/\s]+$/.test(cleaned) ? cleaned : null;
+  const cleaned = value.trim().replace(/\/+$/, "").toLowerCase();
+  return /^https:\/\/[a-z0-9.-]+$/.test(cleaned) ? cleaned : null;
 }
 
 function isLocalRequest(request: Request): boolean {

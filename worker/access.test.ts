@@ -122,6 +122,19 @@ describe("the team address", () => {
     expect(normaliseTeamDomain(`  ${TEAM_DOMAIN}/ \n`)).toBe(TEAM_DOMAIN);
   });
 
+  it("lower-cases the address, because the issuer is written in lower case", async () => {
+    expect(normaliseTeamDomain("https://Example-Team.CloudflareAccess.com")).toBe(TEAM_DOMAIN);
+    const env = bindings({ TEAM_DOMAIN: "https://Example-Team.CloudflareAccess.com" });
+    expect((await request(await sign(), env)).status).toBe(200);
+  });
+
+  it("rejects a query string, fragment, port or user name", () => {
+    for (const suffix of ["?a=b", "#frag", ":8443", "@evil.example.com"]) {
+      expect(normaliseTeamDomain(`${TEAM_DOMAIN}${suffix}`)).toBeNull();
+    }
+    expect(normaliseTeamDomain("https://user@example-team.cloudflareaccess.com")).toBeNull();
+  });
+
   it("rejects a value that is not https:// and a host name alone", () => {
     expect(normaliseTeamDomain("example-team.cloudflareaccess.com")).toBeNull();
     expect(normaliseTeamDomain("http://example-team.cloudflareaccess.com")).toBeNull();

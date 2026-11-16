@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv } from "./env";
 
+// The front end repeats this limit in src/App.tsx, so change both together.
 export const MAX_TITLE_LENGTH = 200;
 
 export type Item = {
@@ -43,7 +44,8 @@ items.post("/", async (c) => {
   // Browsers only send this content type from a script on the app's own page,
   // not from a form on another website. Requiring it blocks that kind of
   // forged request.
-  if (!c.req.header("Content-Type")?.startsWith("application/json")) {
+  // Media types are not case sensitive, so "Application/JSON" is valid too.
+  if (!c.req.header("Content-Type")?.toLowerCase().startsWith("application/json")) {
     return c.json({ error: "Send the item as JSON." }, 415);
   }
 
@@ -66,6 +68,12 @@ items.post("/", async (c) => {
   )
     .bind(parsed.title)
     .first<Item>();
+
+  // RETURNING always gives the new row back. If it ever does not, say so
+  // rather than telling the caller it worked.
+  if (!item) {
+    throw new Error("The item was inserted but the database did not return it.");
+  }
 
   return c.json({ item }, 201);
 });

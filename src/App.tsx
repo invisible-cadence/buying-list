@@ -1,11 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { addItem, listItems, type Item } from "./api";
 
+// Must match MAX_TITLE_LENGTH in worker/items.ts, which is what actually enforces it.
 const MAX_TITLE_LENGTH = 200;
 
 export function App() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [title, setTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +16,10 @@ export function App() {
   useEffect(() => {
     listItems()
       .then(setItems)
-      .catch((e: unknown) => setError(messageFrom(e)))
+      .catch((e: unknown) => {
+        setLoadFailed(true);
+        setError(messageFrom(e));
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -59,14 +64,16 @@ export function App() {
 
       {loading ? (
         <p>Loading…</p>
-      ) : items.length === 0 ? (
-        <p>Nothing here yet.</p>
-      ) : (
+      ) : items.length > 0 ? (
         <ul>
           {items.map((item) => (
             <li key={item.id}>{item.title}</li>
           ))}
         </ul>
+      ) : (
+        // After a failed load the error above is the whole story. An empty
+        // message would suggest the list is empty when it is just unknown.
+        !loadFailed && <p>Nothing here yet.</p>
       )}
     </main>
   );
