@@ -27,6 +27,7 @@ browser ──▶ Cloudflare Access (sign-in) ──▶ Worker ──▶ D1 data
 - `worker/`: the Worker. It uses [Hono](https://hono.dev) for the API routes, checks the Access token on every request, and hands everything that is not an API call to the front end's files.
 - `migrations/`: the database's tables, as numbered SQL files.
 - `wrangler.jsonc`: tells Cloudflare what the Worker is and what it is connected to.
+- `tsconfig*.json`: strict TypeScript settings in three projects, for the front end (browser), the Worker (Cloudflare's runtime) and the tooling (Node), because each has different built-in features. `tsconfig.base.json` holds what they share.
 
 The API has two routes so far: `GET /api/items` lists the items, newest first, and `POST /api/items` adds one.
 
@@ -41,7 +42,7 @@ npm run db:migrate:local          # creates the local database
 npm run dev                       # opens the app on http://localhost:5173
 ```
 
-Locally the sign-in check is skipped, and only for requests to `localhost`. That is the `DEV_SKIP_ACCESS` line in `.dev.vars`.
+Locally the sign-in check is skipped, and only for requests to `localhost` or `127.0.0.1`. That is the `DEV_SKIP_ACCESS` line in `.dev.vars`. If you open the dev server by any other address, such as your computer's network address from a phone, the app answers with a configuration error. That is deliberate.
 
 | Command | What it does |
 | --- | --- |
@@ -86,7 +87,7 @@ Then reload the page and look for a line starting `Access token refused` or `Acc
 | `database_id` | `wrangler.jsonc` | Which D1 database the Worker uses. |
 | `TEAM_DOMAIN` | Worker secret | Your Access team address. |
 | `POLICY_AUD` | Worker secret | The Access application's audience tag. |
-| `DEV_SKIP_ACCESS` | `.dev.vars` | Local development only. Skips the sign-in check for `localhost`. |
+| `DEV_SKIP_ACCESS` | `.dev.vars` | Local development only. Skips the sign-in check for `localhost` and `127.0.0.1`. |
 
 ## Costs
 
