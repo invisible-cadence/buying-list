@@ -25,6 +25,7 @@ browser ──▶ Cloudflare Access (sign-in) ──▶ Worker ──▶ D1 data
 
 - `src/`: the front end, written in React and built by Vite.
 - `worker/`: the Worker. It uses [Hono](https://hono.dev) for the API routes, checks the Access token on every request, and hands everything that is not an API call to the front end's files.
+- `shared/`: the few things the front end and the Worker must agree on, such as the longest title. Both import from here.
 - `migrations/`: the database's tables, as numbered SQL files.
 - `wrangler.jsonc`: tells Cloudflare what the Worker is and what it is connected to.
 - `tsconfig*.json`: strict TypeScript settings in three projects, for the front end (browser), the Worker (Cloudflare's runtime) and the tooling (Node), because each has different built-in features. `tsconfig.base.json` holds what they share.

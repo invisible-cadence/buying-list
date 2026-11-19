@@ -1,8 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { addItem, listItems, type Item } from "./api";
-
-// Must match MAX_TITLE_LENGTH in worker/items.ts, which is what actually enforces it.
-const MAX_TITLE_LENGTH = 200;
+import { MAX_TITLE_LENGTH, type Item } from "../shared/items";
+import { addItem, listItems } from "./api";
 
 export function App() {
   const [items, setItems] = useState<Item[]>([]);

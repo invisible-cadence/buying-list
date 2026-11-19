@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createApp } from "./index";
 import type { Bindings } from "./env";
-import { MAX_TITLE_LENGTH, parseTitle } from "./items";
+import { MAX_TITLE_LENGTH } from "../shared/items";
+import { parseTitle } from "./items";
 
 describe("parseTitle", () => {
   it("accepts a title and trims the spaces around it", () => {

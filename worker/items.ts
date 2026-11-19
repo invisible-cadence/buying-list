@@ -1,14 +1,6 @@
 import { Hono } from "hono";
+import { MAX_TITLE_LENGTH, type Item } from "../shared/items";
 import type { AppEnv } from "./env";
-
-// The front end repeats this limit in src/App.tsx, so change both together.
-export const MAX_TITLE_LENGTH = 200;
-
-export type Item = {
-  id: number;
-  title: string;
-  createdAt: string;
-};
 
 /**
  * Turns whatever the caller sent into a clean title, or says why it cannot.

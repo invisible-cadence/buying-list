@@ -1,8 +1,4 @@
-export type Item = {
-  id: number;
-  title: string;
-  createdAt: string;
-};
+import type { Item } from "../shared/items";
 
 /** Reads the error message the API sends, or falls back to a generic one. */
 async function failure(response: Response): Promise<Error> {
