@@ -28,7 +28,7 @@ The reasons are in [`docs/decisions/0001-stack-and-hosting.md`](docs/decisions/0
 | Phase | What | Status |
 | --- | --- | --- |
 | 0 | Setup and security baseline | Done |
-| 1 | Walking skeleton, behind sign-in | Not started |
+| 1 | Walking skeleton, behind sign-in | Done |
 | 2 | Core list | Not started |
 | 3 | Several people, private items, install on a phone | Not started |
 | | Pause: two to three weeks of real use | |
@@ -71,6 +71,8 @@ Before the first step:
 7. The Worker verifies the Access token on every request.
 
 **Done when:** an item added from a phone's browser is still there after a refresh, and a visitor who is not signed in gets nothing.
+
+**Result:** checked on 15 November 2026. An item added from a phone's browser was still there after a refresh and showed on a laptop, and a signed-out request was redirected to the Cloudflare login and received no data. The project uses Node 24 (Node 22 ends on 30 April 2027).
 
 ### Phase 2: Core list
 

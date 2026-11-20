@@ -1,0 +1,10 @@
+# Copy this file to .dev.vars for local development. .dev.vars is ignored by git.
+#
+# Local development only: skip the Access token check when the request is for
+# localhost or 127.0.0.1. The check ignores this setting on any other address,
+# including your computer's network address, so open the app on localhost.
+DEV_SKIP_ACCESS=true
+
+# Only needed to test the real token check locally. Leave them out otherwise.
+# TEAM_DOMAIN=https://YOUR-TEAM.cloudflareaccess.com
+# POLICY_AUD=YOUR_ACCESS_APPLICATION_AUD_TAG_HERE
