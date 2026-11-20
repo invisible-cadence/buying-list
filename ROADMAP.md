@@ -29,7 +29,7 @@ The reasons are in [`docs/decisions/0001-stack-and-hosting.md`](docs/decisions/0
 | --- | --- | --- |
 | 0 | Setup and security baseline | Done |
 | 1 | Walking skeleton, behind sign-in | Done |
-| 2 | Core list | Not started |
+| 2 | Core list | In progress |
 | 3 | Several people, private items, install on a phone | Not started |
 | | Pause: two to three weeks of real use | |
 | 4 | Fast capture from a phone | Not started |
