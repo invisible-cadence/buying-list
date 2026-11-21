@@ -83,7 +83,7 @@ An item holds: a title and notes, a status, links, a type (one-off, restock, gif
 1. A migration for the full model, with a separate `links` table.
 2. API routes to create, edit, change status and archive, with input validated on the way in.
 3. Screens: the list grouped by status, an item page, and a quick-add box.
-4. Filters by type, by status and by "needed soon".
+4. Filters by type, by status and by "needed soon", a search over titles and notes, and a choice of sort order.
 5. Tests for the status rules and the validation.
 
 **Done when:** an item can go from idea to bought, with links and notes, entirely on a phone.
