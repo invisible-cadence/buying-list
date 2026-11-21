@@ -10,7 +10,7 @@ How an item is stored, and which rules govern its status, before any screen depe
 ## Decision
 
 - **Any status can move to any other.** The statuses are idea, researching, decided, waiting for money, ready to buy and bought. Buying plans go backwards, such as a decided item that turns out to be too expensive, and forbidding that would make the app fight the person using it.
-- **Bought details belong to the bought status.** Moving to bought records a date (today unless one is given), and optionally the price paid and the shop. Moving to any other status clears them. The code applies this rule, and the table also refuses an item that is bought without a date or has purchase details without being bought.
+- **Bought details belong to the bought status.** Moving to bought records a date (today unless one is given), and optionally the price paid and the shop. Moving to any other status clears them. Marking an item bought when it already is keeps its details, changing only those that are sent, so a wrong price can be corrected without losing the date or shop. The code applies this rule, and the table also refuses an item that is bought without a date or has purchase details without being bought.
 - **Archiving is a separate column, not a status.** An archived item remembers whether it was bought, and can be restored to exactly where it was.
 - **Money is a whole number of cents, with no currency column.** Decimals invite rounding errors, and one deployment is one household with one currency.
 - **Dates are text in the form `YYYY-MM-DD`, times are ISO 8601 in UTC.** SQLite has no date type. This form sorts correctly as text and the database can check that a date is real.
@@ -24,4 +24,5 @@ How an item is stored, and which rules govern its status, before any screen depe
 
 - Real use showing that a forward-only status order is wanted after all.
 - A second currency, which would need a currency column.
+- Real use showing a need for a cancelled or rebuy state, for example an item that was bought, returned and is wanted again. For now, moving it back to an earlier status is enough, and it is listed in the roadmap under "Later".
 - Phase 3 finding that the private and added-by columns need a different shape.

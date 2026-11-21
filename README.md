@@ -45,7 +45,7 @@ Every route needs the sign-in token. Anything that changes data must be sent wit
 | `GET /api/items/:id` | One item. |
 | `POST /api/items` | Adds an item. Only `title` is required. Optional: `notes`, `type`, `priority`, `neededBy` (`YYYY-MM-DD`), `budgetCents`. A new item is an idea. |
 | `PATCH /api/items/:id` | Changes any of those fields. Fields left out stay as they are, and `null` clears the date or budget. |
-| `POST /api/items/:id/status` | Moves the item to a status: `idea`, `researching`, `decided`, `waiting_for_money`, `ready_to_buy` or `bought`. Any status can move to any other. `bought` also takes optional `boughtOn`, `paidCents` and `boughtFrom`. Moving out of `bought` clears them. |
+| `POST /api/items/:id/status` | Moves the item to a status: `idea`, `researching`, `decided`, `waiting_for_money`, `ready_to_buy` or `bought`. Any status can move to any other. `bought` also takes optional `boughtOn`, `paidCents` and `boughtFrom`. Moving out of `bought` clears them, and sending `bought` again for an item that is already bought keeps what it has, apart from any detail you send, so a price can be corrected. |
 | `POST /api/items/:id/archive` and `/unarchive` | Hides an item from the list, or brings it back. |
 | `POST /api/items/:id/links` | Adds a link: `url` (must start with `http://` or `https://`) and an optional `label`. |
 | `DELETE /api/items/:id/links/:linkId` | Removes a link. |

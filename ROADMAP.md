@@ -153,3 +153,4 @@ Before starting: buy about $5 of Claude API credit, keep auto-reload off, and lo
 
 - An MCP server, so an AI assistant can read and add to the list directly.
 - Native notifications on the phone.
+- A cancelled or rebuy state for items that were bought, returned and wanted again. Today the item moves back to an earlier status and loses its purchase details.
