@@ -29,7 +29,7 @@ The reasons are in [`docs/decisions/0001-stack-and-hosting.md`](docs/decisions/0
 | --- | --- | --- |
 | 0 | Setup and security baseline | Done |
 | 1 | Walking skeleton, behind sign-in | Done |
-| 2 | Core list | Not started |
+| 2 | Core list | In progress |
 | 3 | Several people, private items, install on a phone | Not started |
 | | Pause: two to three weeks of real use | |
 | 4 | Fast capture from a phone | Not started |
@@ -153,3 +153,4 @@ Before starting: buy about $5 of Claude API credit, keep auto-reload off, and lo
 
 - An MCP server, so an AI assistant can read and add to the list directly.
 - Native notifications on the phone.
+- A cancelled or rebuy state for items that were bought, returned and wanted again. Today the item moves back to an earlier status and loses its purchase details.

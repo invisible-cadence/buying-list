@@ -18,7 +18,7 @@ Node only runs the tooling on a developer's computer and in the GitHub check. Th
 ## Tool versions held back
 
 - **TypeScript 6.0, not 7.** The newest TypeScript major is 7, but `typescript-eslint` supports versions below 6.1 only, and linting is a requirement. Revisit when `typescript-eslint` supports TypeScript 7.
-- **Vitest runs in plain Node,** without the Cloudflare Workers test pool. The tests so far cover logic that does not need a real database. Testing the SQL against a real D1 database, which Phase 2 may need, would add that pool, and it currently requires Vitest 4. If that comes, Vitest moves back to version 4.
+- **Vitest runs in plain Node,** without the Cloudflare Workers test pool. The tests so far cover logic that does not need a real database. Testing the SQL against a real D1 database, which Phase 2 needed, would have added that pool, and it currently requires Vitest 4. Phase 2 chose a different route and kept Vitest 5: see [decision 0005](0005-testing-queries-against-a-real-database.md).
 
 ## What would change this decision
 
