@@ -146,6 +146,35 @@ describe("refusing bad requests", () => {
     expect((await itemFrom(await send("GET", `/${created.id}`))).archivedAt).toBeNull();
   });
 
+  it("answers 400, not a server error, for an address the URL parser accepts but the table would not", async () => {
+    const created = await addItem();
+    const response = await send("POST", `/${created.id}/links`, { url: "http:example.com" });
+    expect(response.status).toBe(400);
+  });
+
+  it("answers 404 for an id that is not a number, even when the body is also wrong", async () => {
+    for (const path of ["/abc", "/abc/status", "/abc/links"]) {
+      const method = path === "/abc" ? "PATCH" : "POST";
+      expect((await send(method, path, { nonsense: true })).status).toBe(404);
+    }
+  });
+
+  it("keeps the purchase details when an item is marked bought a second time", async () => {
+    const created = await addItem();
+    await send("POST", `/${created.id}/status`, {
+      status: "bought",
+      boughtOn: "2026-11-10",
+      paidCents: 4999,
+      boughtFrom: "Example Shop",
+    });
+    const again = await itemFrom(await send("POST", `/${created.id}/status`, { status: "bought" }));
+    expect(again).toMatchObject({
+      boughtOn: "2026-11-10",
+      paidCents: 4999,
+      boughtFrom: "Example Shop",
+    });
+  });
+
   it("accepts the content type in any letter case", async () => {
     // Valid type, invalid body: the answer is 400 (bad body), not 415 (bad type).
     expect((await send("POST", "", "not json", "Application/JSON; charset=utf-8")).status).toBe(

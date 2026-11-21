@@ -89,18 +89,20 @@ items.post("/", async (c) => {
 
 items.patch("/:id", async (c) => {
   const id = idFrom(c.req.param("id"));
+  if (id === null) return notFound(c);
   const body = await readBody(c, updateItemSchema);
   if ("response" in body) return body.response;
-  const item = id === null ? null : await updateItem(c.env.DB, id, body.data);
+  const item = await updateItem(c.env.DB, id, body.data);
   return item ? c.json({ item }) : notFound(c);
 });
 
 items.post("/:id/status", async (c) => {
   const id = idFrom(c.req.param("id"));
+  if (id === null) return notFound(c);
   const body = await readBody(c, changeStatusSchema);
   if ("response" in body) return body.response;
   const { status, ...details } = body.data;
-  const item = id === null ? null : await changeStatus(c.env.DB, id, status, details, today());
+  const item = await changeStatus(c.env.DB, id, status, details, today());
   return item ? c.json({ item }) : notFound(c);
 });
 
@@ -118,9 +120,10 @@ items.post("/:id/unarchive", async (c) => {
 
 items.post("/:id/links", async (c) => {
   const id = idFrom(c.req.param("id"));
+  if (id === null) return notFound(c);
   const body = await readBody(c, addLinkSchema);
   if ("response" in body) return body.response;
-  const item = id === null ? null : await addLink(c.env.DB, id, body.data);
+  const item = await addLink(c.env.DB, id, body.data);
   return item ? c.json({ item }, 201) : notFound(c);
 });
 

@@ -58,11 +58,17 @@ const shop = z
 const notAnObject = (issue: { code: string }) =>
   issue.code === "invalid_type" ? "Send the data as a JSON object." : undefined;
 
-/** True for an address that starts with http:// or https:// and is a valid web address. */
+/**
+ * True for a web address: it must be written starting http:// or https://, and
+ * be one the URL parser accepts. The parser alone is too forgiving. It reads
+ * "http:example.com" as a web address, but the database, which only accepts
+ * text that starts with http:// or https://, would refuse it.
+ */
 function isWebAddress(value: string): boolean {
+  if (!/^https?:\/\//i.test(value)) return false;
   try {
-    const { protocol } = new URL(value);
-    return protocol === "http:" || protocol === "https:";
+    new URL(value);
+    return true;
   } catch {
     return false;
   }
@@ -115,7 +121,6 @@ export const changeStatusSchema = z
         input.boughtFrom === undefined),
     { error: "Purchase details can only be sent with the status bought." },
   );
-export type ChangeStatusInput = z.infer<typeof changeStatusSchema>;
 
 /** A link to add to an item. */
 export const addLinkSchema = z.strictObject(
@@ -135,7 +140,6 @@ export const addLinkSchema = z.strictObject(
   },
   { error: notAnObject },
 );
-export type AddLinkInput = z.infer<typeof addLinkSchema>;
 
 /**
  * Checks a request body against a schema. Returns the clean data, or the

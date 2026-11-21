@@ -140,6 +140,10 @@ describe("adding a link", () => {
   it("rejects anything that is not a web address, including script and file addresses", () => {
     for (const url of [
       "javascript:alert(1)",
+      // The URL parser accepts these, but they are not written as http:// or https://.
+      "http:example.com",
+      "https:example.com",
+      "http:/example.com",
       "data:text/html,hi",
       "file:///etc/passwd",
       "ftp://x.example",

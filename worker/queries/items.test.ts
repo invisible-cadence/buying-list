@@ -197,6 +197,32 @@ describe("status", () => {
     });
   });
 
+  it("keeps the purchase details when an item that is already bought is marked bought again", async () => {
+    const created = await createItem(db, { title: "Kettle" });
+    await changeStatus(
+      db,
+      created.id,
+      "bought",
+      { boughtOn: "2026-11-10", paidCents: 4999, boughtFrom: "Shop" },
+      "2026-11-20",
+    );
+    const again = await changeStatus(db, created.id, "bought", {}, "2026-11-20");
+    expect(again).toMatchObject({ boughtOn: "2026-11-10", paidCents: 4999, boughtFrom: "Shop" });
+
+    const corrected = await changeStatus(
+      db,
+      created.id,
+      "bought",
+      { paidCents: 4500 },
+      "2026-11-20",
+    );
+    expect(corrected).toMatchObject({
+      boughtOn: "2026-11-10",
+      paidCents: 4500,
+      boughtFrom: "Shop",
+    });
+  });
+
   it("lets an item move through every status, in any direction", async () => {
     const created = await createItem(db, { title: "Kettle" });
     for (const status of [

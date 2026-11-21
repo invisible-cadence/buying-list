@@ -40,7 +40,10 @@ export async function listItems(
   // One round trip to the database for both queries.
   const [itemResult, linkResult] = await db.batch([
     db.prepare(`SELECT ${ITEM_COLUMNS} FROM items ${where} ORDER BY id DESC`),
-    db.prepare(`SELECT ${LINK_COLUMNS} FROM links ORDER BY id`),
+    // Only the links of the items being listed, not those of archived items.
+    db.prepare(
+      `SELECT ${LINK_COLUMNS} FROM links WHERE item_id IN (SELECT id FROM items ${where}) ORDER BY id`,
+    ),
   ]);
 
   const linksByItem = new Map<number, Link[]>();
@@ -142,7 +145,9 @@ export async function changeStatus(
   details: BoughtDetails,
   today: string,
 ): Promise<Item | null> {
-  const fields = statusFields(to, details, today);
+  const current = await getItem(db, id);
+  if (!current) return null;
+  const fields = statusFields(to, details, current, today);
   return updateAndReturn(
     db,
     id,
