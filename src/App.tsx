@@ -1,88 +1,56 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { MAX_TITLE_LENGTH, type Item } from "../shared/items";
-import { addItem, listItems } from "./api";
+import { useEffect, useState } from "react";
+import type { Item } from "../shared/items";
+import { errorMessage, listItems } from "./api";
+import { groupByStatus } from "./groups";
+import { QuickAdd } from "./QuickAdd";
+import { StatusSection } from "./StatusSection";
 
+/**
+ * The main screen. It holds the list and hands each part what it needs. The
+ * parts make their own requests and give back the item the server returned,
+ * which replaces the old copy here. The screen never guesses what changed.
+ */
 export function App() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadFailed, setLoadFailed] = useState(false);
-  const [title, setTitle] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Load the list once, when the page first appears.
   useEffect(() => {
     listItems()
       .then(setItems)
-      .catch((e: unknown) => {
-        setLoadFailed(true);
-        setError(messageFrom(e));
-      })
+      .catch((e: unknown) => setLoadError(errorMessage(e)))
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (title.trim() === "" || saving) return;
-
-    setSaving(true);
-    setError(null);
-    try {
-      const item = await addItem(title);
-      setItems((current) => [item, ...current]);
-      setTitle("");
-    } catch (e) {
-      setError(messageFrom(e));
-    } finally {
-      setSaving(false);
-    }
+  function handleAdded(item: Item) {
+    setItems((current) => [item, ...current]);
   }
+
+  function handleChanged(changed: Item) {
+    setItems((current) => current.map((item) => (item.id === changed.id ? changed : item)));
+  }
+
+  const groups = groupByStatus(items);
 
   return (
     <main>
       <h1>Buying list</h1>
-
-      <form onSubmit={(event) => void handleSubmit(event)}>
-        <label htmlFor="title">What do we need to buy?</label>
-        <div className="row">
-          <input
-            id="title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            maxLength={MAX_TITLE_LENGTH}
-            autoComplete="off"
-          />
-          <button type="submit" disabled={saving || title.trim() === ""}>
-            Add
-          </button>
-        </div>
-      </form>
-
-      {error && <p role="alert">{error}</p>}
+      <QuickAdd onAdded={handleAdded} />
 
       {loading ? (
         <p>Loading…</p>
-      ) : items.length > 0 ? (
-        <ul>
-          {items.map((item) => (
-            <li key={item.id}>{item.title}</li>
-          ))}
-        </ul>
+      ) : loadError ? (
+        // After a failed load the error is the whole story. "Nothing here yet"
+        // would suggest the list is empty when it is just unknown.
+        <p role="alert">{loadError}</p>
+      ) : groups.length > 0 ? (
+        groups.map((group) => (
+          <StatusSection key={group.status} group={group} onChanged={handleChanged} />
+        ))
       ) : (
-        // After a failed load the error above is the whole story. An empty
-        // message would suggest the list is empty when it is just unknown.
-        !loadFailed && <p>Nothing here yet.</p>
+        <p>Nothing here yet.</p>
       )}
     </main>
   );
-}
-
-function messageFrom(error: unknown): string {
-  // When the sign-in has expired, Cloudflare answers with a redirect to its
-  // login page, which the browser reports as a network failure. A reload
-  // sends the person to sign in again.
-  if (error instanceof TypeError) {
-    return "Could not reach the server. Reload the page, and sign in again if asked.";
-  }
-  return error instanceof Error ? error.message : "Something went wrong.";
 }
