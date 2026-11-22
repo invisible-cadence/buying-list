@@ -4,6 +4,6 @@ import { defineConfig } from "vitest/config";
 // Workers runtime or a real database.
 export default defineConfig({
   test: {
-    include: ["worker/**/*.test.ts", "src/**/*.test.ts"],
+    include: ["worker/**/*.test.ts", "src/**/*.test.ts", "tests/**/*.test.ts"],
   },
 });
