@@ -1,4 +1,5 @@
 import type { ItemType, Priority, Status } from "../shared/items";
+import type { SortOrder } from "./find";
 
 // The names people read for the API's fixed words. The API speaks in words
 // such as "waiting_for_money"; the screen shows "Waiting for money".
@@ -23,4 +24,11 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
   low: "Low",
   normal: "Normal",
   high: "High",
+};
+
+export const SORT_LABELS: Record<SortOrder, string> = {
+  newest: "Newest first",
+  priority: "Priority, high first",
+  needed_by: "Needed-by date, soonest first",
+  title: "A to Z",
 };

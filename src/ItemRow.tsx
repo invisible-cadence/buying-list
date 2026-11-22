@@ -27,6 +27,7 @@ export function ItemRow({ item, onChanged }: Props) {
       <div className="item">
         <div>
           <Link to={itemPath(item.id)}>{item.title}</Link>
+          {item.archivedAt !== null && <span className="tag">Archived</span>}
           {details && <div className="details">{details}</div>}
         </div>
         <MoveSelect item={item} disabled={saving || buying} onChoose={choose} />
