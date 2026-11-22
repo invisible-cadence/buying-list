@@ -1,3 +1,5 @@
+import type { Item } from "../shared/items";
+
 // Turning the API's plain values into text for people, and back. Plain
 // functions with no React, so they can be tested on their own.
 
@@ -7,18 +9,23 @@ const MAX_WHOLE_DIGITS = 9;
 /**
  * Reads a price typed by a person, such as "12", "12.5" or "12,50", as whole
  * cents. A comma works as the decimal mark too, because many phone keyboards
- * offer one. An empty box means no price, which is allowed.
+ * offer one. An empty box means no amount, which is allowed.
+ *
+ * @param what What the amount is, for the error message, such as "budget".
  *
  * The text is read digit by digit rather than with parseFloat, because
  * 0.1 + 0.2 is not exactly 0.3 in floating point, and money must be exact.
  */
-export function parseMoney(text: string): { cents: number | null } | { error: string } {
+export function parseMoney(
+  text: string,
+  what = "price",
+): { cents: number | null } | { error: string } {
   const trimmed = text.trim();
   if (trimmed === "") return { cents: null };
 
   const match = new RegExp(`^(\\d{1,${MAX_WHOLE_DIGITS}})(?:[.,](\\d{1,2}))?$`).exec(trimmed);
   if (!match) {
-    return { error: "Write the price as a number, such as 12 or 12.50." };
+    return { error: `Write the ${what} as a number, such as 12 or 12.50.` };
   }
   const whole = Number(match[1]);
   // "12.5" means 12.50, so a single digit after the mark is tens of cents.
@@ -62,4 +69,21 @@ export function formatDate(isoDate: string, locale?: string): string {
     month: "short",
     year: "numeric",
   }).format(date);
+}
+
+/** The short line under the title: what was paid for a bought item, otherwise the plans. */
+export function summaryOf(item: Item): string {
+  if (item.status === "bought") {
+    // Reads as a sentence, such as "Bought for 24.99 at Example Shop on 20 Nov 2026".
+    const parts = ["Bought"];
+    if (item.paidCents !== null) parts.push(`for ${formatMoney(item.paidCents)}`);
+    if (item.boughtFrom !== "") parts.push(`at ${item.boughtFrom}`);
+    if (item.boughtOn !== null) parts.push(`on ${formatDate(item.boughtOn)}`);
+    return parts.join(" ");
+  }
+  const parts: string[] = [];
+  if (item.priority === "high") parts.push("High priority");
+  if (item.budgetCents !== null) parts.push(`Budget ${formatMoney(item.budgetCents)}`);
+  if (item.neededBy !== null) parts.push(`Needed by ${formatDate(item.neededBy)}`);
+  return parts.join(" · ");
 }

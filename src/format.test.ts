@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, formatMoney, localToday, parseMoney } from "./format";
+import type { Item } from "../shared/items";
+import { formatDate, formatMoney, localToday, parseMoney, summaryOf } from "./format";
 
 describe("parseMoney", () => {
   it("reads whole numbers and decimals as exact cents", () => {
@@ -23,6 +24,12 @@ describe("parseMoney", () => {
 
   it("ignores spaces around the number", () => {
     expect(parseMoney("  7.20 ")).toEqual({ cents: 720 });
+  });
+
+  it("names the amount in its error", () => {
+    expect(parseMoney("lots", "budget")).toEqual({
+      error: "Write the budget as a number, such as 12 or 12.50.",
+    });
   });
 
   it("treats an empty box as no price", () => {
@@ -70,5 +77,41 @@ describe("formatDate", () => {
 
   it("gives back text it cannot read", () => {
     expect(formatDate("soon", "en-GB")).toBe("soon");
+  });
+});
+
+describe("summaryOf", () => {
+  const base: Item = {
+    id: 1,
+    title: "Electric kettle",
+    notes: "",
+    status: "idea",
+    type: "one_off",
+    priority: "normal",
+    neededBy: null,
+    budgetCents: null,
+    boughtOn: null,
+    paidCents: null,
+    boughtFrom: "",
+    archivedAt: null,
+    createdAt: "2026-11-21 10:00:00",
+    updatedAt: "2026-11-21 10:00:00",
+    links: [],
+  };
+
+  it("is empty for an item with nothing set", () => {
+    expect(summaryOf(base)).toBe("");
+  });
+
+  it("shows the plans of an open item", () => {
+    expect(summaryOf({ ...base, priority: "high", budgetCents: 6000 })).toBe(
+      "High priority · Budget 60.00",
+    );
+  });
+
+  it("reads as a sentence for a bought item, leaving out what is missing", () => {
+    expect(
+      summaryOf({ ...base, status: "bought", paidCents: 2499, boughtFrom: "Example Shop" }),
+    ).toBe("Bought for 24.99 at Example Shop");
   });
 });

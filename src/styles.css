@@ -27,6 +27,7 @@ label {
 /* 16px or larger stops iPhones zooming in when a box is tapped. */
 input,
 select,
+textarea,
 button {
   font-size: 1rem;
   padding: 0.5rem;
@@ -95,6 +96,32 @@ summary h2 {
   margin-top: 0.5rem;
 }
 
-.bought-form .row {
+/* Space between the last field and the buttons. */
+.bought-form .row,
+.stack .row {
   margin-top: 0.5rem;
+}
+
+/* A column of labels and fields, as on the item page. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+textarea {
+  font-family: inherit;
+  resize: vertical;
+}
+
+/* Long web addresses wrap instead of pushing the page sideways. */
+.link {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.notice {
+  border: 1px solid currentColor;
+  padding: 0 0.75rem 0.75rem;
+  margin-bottom: 1rem;
 }
