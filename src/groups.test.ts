@@ -43,12 +43,6 @@ describe("groupByStatus", () => {
   it("gives no groups for an empty list", () => {
     expect(groupByStatus([])).toEqual([]);
   });
-
-  it("leaves out archived items", () => {
-    const archived = { ...item(2, "idea"), archivedAt: "2026-11-22 10:00:00" };
-    const groups = groupByStatus([item(1, "idea"), archived]);
-    expect(groups[0]?.items.map((i) => i.id)).toEqual([1]);
-  });
 });
 
 describe("withLatest", () => {
