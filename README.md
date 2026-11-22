@@ -4,7 +4,7 @@ A shared household buying list, installed on your phone, that tracks things from
 
 ## Status
 
-Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The list is grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Each item has its own page for editing its details and links, and for archiving it. The list can be searched, filtered by type, status and "needed soon", sorted, and can show archived items.
+Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The list is grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Each item has its own page for editing its details and links, and for archiving it. The list can be searched, filtered by type, status and "needed soon", sorted, and can show archived items. It can be added to a phone's home screen and opens like an app.
 
 - [`ROADMAP.md`](ROADMAP.md): what is being built, in what order.
 - [`docs/decisions/`](docs/decisions/): why it is being built this way, and what else was considered.
@@ -39,6 +39,7 @@ browser ──▶ Cloudflare Access (sign-in) ──▶ Worker ──▶ D1 data
   - `status.ts`: the rules for moving an item between statuses, as a plain function.
   - `queries/items.ts`: the only file that contains SQL.
   - `test-support/`: a real local database for tests.
+- `public/`: files served as they are. `manifest.webmanifest` tells a phone the app's name, icon and how to open it, and `icons/` holds the icon: `icon.svg` is the source, and the PNGs are copies of it at the sizes phones ask for.
 - `shared/`: the few things the front end and the Worker must agree on, such as the longest title. Both import from here.
 - `migrations/`: the database's tables, as numbered SQL files.
 - `wrangler.jsonc`: tells Cloudflare what the Worker is and what it is connected to.
@@ -97,6 +98,15 @@ You need a free [Cloudflare account](https://dash.cloudflare.com/sign-up) with C
 
 Open the Worker's address. You should be asked to sign in, and then see the list.
 
+### Put it on a phone
+
+Open the app's address in the phone's browser and sign in. Then:
+
+- **Android, Chrome:** open the menu (three dots) and choose **Add to home screen**, then **Install**.
+- **iPhone, Safari:** tap **Share**, then **Add to Home Screen**.
+
+The app opens from its icon, without the browser's address bar. On an iPhone, an app on the home screen keeps its own cookies, separate from Safari, so you sign in once more the first time you open it.
+
 ### If you are refused after signing in
 
 The Worker logs why it refused a request, and never tells the visitor. Read the log with:
@@ -128,6 +138,8 @@ Nothing, on the free plans of Cloudflare Workers, D1 and Access. The figures and
 - Search, filters and sort run on the phone over the whole list, which it loads in one go, archived items included. That is quick for hundreds of items, but not for many thousands.
 - Search matches whole phrases in titles and notes, not separate words in any order. "Needed soon" means the next 14 days or overdue, a fixed number in `src/find.ts`.
 - Search and filter choices last until the app is reloaded.
+- The app needs a connection. Nothing works offline, and an app on the home screen shows a browser error page when there is no signal.
+- When the sign-in expires, the installed app shows Cloudflare's sign-in page, as the browser does.
 - Everyone who can sign in sees the same list. The database has columns for who added an item and whether it is private, but nothing sets or reads them until Phase 3.
 - Two people editing the same item at once: the last save wins.
 - Through the API, the purchase date defaults to today in UTC, which can be a day off late in the evening. The screen avoids this by sending the phone's own date.
