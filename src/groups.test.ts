@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Item, Status } from "../shared/items";
-import { groupByStatus } from "./groups";
+import { groupByStatus, withLatest } from "./groups";
 
 /** An invented item with sensible defaults. Only the id and status matter here. */
 function item(id: number, status: Status): Item {
@@ -42,5 +42,25 @@ describe("groupByStatus", () => {
 
   it("gives no groups for an empty list", () => {
     expect(groupByStatus([])).toEqual([]);
+  });
+
+  it("leaves out archived items", () => {
+    const archived = { ...item(2, "idea"), archivedAt: "2026-11-22 10:00:00" };
+    const groups = groupByStatus([item(1, "idea"), archived]);
+    expect(groups[0]?.items.map((i) => i.id)).toEqual([1]);
+  });
+});
+
+describe("withLatest", () => {
+  it("replaces the old copy of an item in place", () => {
+    const moved = item(2, "bought");
+    const list = withLatest([item(1, "idea"), item(2, "idea"), item(3, "idea")], moved);
+    expect(list.map((i) => i.id)).toEqual([1, 2, 3]);
+    expect(list[1]).toBe(moved);
+  });
+
+  it("adds an item the list did not have at the top", () => {
+    const list = withLatest([item(1, "idea")], item(9, "decided"));
+    expect(list.map((i) => i.id)).toEqual([9, 1]);
   });
 });

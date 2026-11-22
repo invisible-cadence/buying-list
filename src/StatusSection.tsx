@@ -1,5 +1,6 @@
 import type { Item } from "../shared/items";
-import { STATUS_LABELS, type StatusGroup } from "./groups";
+import { type StatusGroup } from "./groups";
+import { STATUS_LABELS } from "./labels";
 import { ItemRow } from "./ItemRow";
 
 type Props = {

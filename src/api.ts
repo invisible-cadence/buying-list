@@ -1,4 +1,8 @@
-import type { Item, Status } from "../shared/items";
+import type { Item, ItemType, Priority, Status } from "../shared/items";
+
+// The only file that calls the API. Each function sends one request and gives
+// back what the API answered, or throws an Error carrying the API's own
+// message, which the screen shows as it is.
 
 /** Reads the error message the API sends, or falls back to a generic one. */
 async function failure(response: Response): Promise<Error> {
@@ -13,6 +17,21 @@ async function failure(response: Response): Promise<Error> {
   return new Error(`The request failed (status ${response.status}).`);
 }
 
+/**
+ * Sends a request for one item and gives back the item as the API now has it.
+ * Every route that changes an item answers with the whole item.
+ */
+async function itemRequest(path: string, method = "GET", body?: unknown): Promise<Item> {
+  const response = await fetch(path, {
+    method,
+    // The API requires the JSON header on every change, even with no body.
+    headers: method === "GET" ? undefined : { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!response.ok) throw await failure(response);
+  return ((await response.json()) as { item: Item }).item;
+}
+
 export async function listItems(): Promise<Item[]> {
   const response = await fetch("/api/items");
   if (!response.ok) throw await failure(response);
@@ -20,15 +39,26 @@ export async function listItems(): Promise<Item[]> {
   return body.items;
 }
 
-export async function addItem(title: string): Promise<Item> {
-  const response = await fetch("/api/items", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title }),
-  });
-  if (!response.ok) throw await failure(response);
-  const body = (await response.json()) as { item: Item };
-  return body.item;
+export function getItem(id: number): Promise<Item> {
+  return itemRequest(`/api/items/${id}`);
+}
+
+export function addItem(title: string): Promise<Item> {
+  return itemRequest("/api/items", "POST", { title });
+}
+
+/** The fields an edit can change. Any left out stay as they are; null clears a date or budget. */
+export type ItemChanges = {
+  title?: string;
+  notes?: string;
+  type?: ItemType;
+  priority?: Priority;
+  neededBy?: string | null;
+  budgetCents?: number | null;
+};
+
+export function updateItem(id: number, changes: ItemChanges): Promise<Item> {
+  return itemRequest(`/api/items/${id}`, "PATCH", changes);
 }
 
 /** What can be sent when moving an item. The purchase details go only with "bought". */
@@ -36,16 +66,22 @@ export type StatusChange =
   | { status: Exclude<Status, "bought"> }
   | { status: "bought"; boughtOn?: string; paidCents?: number; boughtFrom?: string };
 
-/** Moves an item to another status, and gives back the item as it now is. */
-export async function changeStatus(id: number, change: StatusChange): Promise<Item> {
-  const response = await fetch(`/api/items/${id}/status`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(change),
-  });
-  if (!response.ok) throw await failure(response);
-  const body = (await response.json()) as { item: Item };
-  return body.item;
+/** Moves an item to another status. */
+export function changeStatus(id: number, change: StatusChange): Promise<Item> {
+  return itemRequest(`/api/items/${id}/status`, "POST", change);
+}
+
+/** Hides an item from the list, or brings it back. */
+export function setArchived(id: number, archived: boolean): Promise<Item> {
+  return itemRequest(`/api/items/${id}/${archived ? "archive" : "unarchive"}`, "POST");
+}
+
+export function addLink(id: number, link: { url: string; label?: string }): Promise<Item> {
+  return itemRequest(`/api/items/${id}/links`, "POST", link);
+}
+
+export function removeLink(id: number, linkId: number): Promise<Item> {
+  return itemRequest(`/api/items/${id}/links/${linkId}`, "DELETE");
 }
 
 /** Turns a failed request into a sentence for the screen. */
