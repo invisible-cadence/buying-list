@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Buying list</title>
+    <!--
+      What lets the app be added to a phone's home screen. Browsers fetch the
+      manifest without cookies unless told otherwise, and Cloudflare Access
+      would then refuse it, so "use-credentials" sends the sign-in cookie.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+    <!-- iPhones take the home-screen icon from here rather than the manifest. -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#1f5f4a" />
   </head>
   <body>
     <div id="root"></div>

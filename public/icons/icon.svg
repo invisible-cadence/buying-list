@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Buying list icon. A square of colour to the edges, so phones can
+       round or crop the corners, with the drawing inside the middle 60%,
+       which every phone's mask keeps. -->
+  <rect width="512" height="512" fill="#1f5f4a"/>
+  <g fill="none" stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+    <!-- A tick, then two lines still to do. -->
+    <path d="M160 196 l28 28 l52 -56"/>
+    <path d="M276 196 h76"/>
+    <path d="M160 276 h192"/>
+    <path d="M160 348 h192"/>
+  </g>
+</svg>
