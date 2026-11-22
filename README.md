@@ -4,7 +4,7 @@ A shared household buying list, installed on your phone, that tracks things from
 
 ## Status
 
-Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The screen is still the Phase 1 one, a text box and a list, so editing, statuses, links and archiving can be used through the API only until the screens arrive.
+Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The main screen shows the list grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Editing an item's details, links and archiving can be used through the API only until the item page arrives.
 
 - [`ROADMAP.md`](ROADMAP.md): what is being built, in what order.
 - [`docs/decisions/`](docs/decisions/): why it is being built this way, and what else was considered.
@@ -23,7 +23,11 @@ browser ──▶ Cloudflare Access (sign-in) ──▶ Worker ──▶ D1 data
                                               └──▶ the front end's files
 ```
 
-- `src/`: the front end, written in React and built by Vite.
+- `src/`: the front end, written in React and built by Vite. Plain React and plain CSS, with no other libraries. Its parts:
+  - `App.tsx`: the main screen. It loads the list, holds it, and swaps in each item the server sends back after a change.
+  - `QuickAdd.tsx`, `StatusSection.tsx`, `ItemRow.tsx` and `BoughtForm.tsx`: the pieces of the screen. Each piece that changes something makes its own request, so it can show "saving" and errors where the person tapped.
+  - `api.ts`: the only file that calls the API.
+  - `groups.ts` and `format.ts`: plain functions with tests, for grouping the list by status, reading and showing prices, and dates.
 - `worker/`: the Worker. It uses [Hono](https://hono.dev) for the API routes, checks the Access token on every request, and hands everything that is not an API call to the front end's files. Its parts have separate jobs:
   - `items.ts`: the routes. Only the web side: read the request, call the pieces below, send the answer.
   - `validation.ts`: what the API accepts, as [Zod](https://zod.dev) schemas. It never touches the database.
@@ -116,11 +120,12 @@ Nothing, on the free plans of Cloudflare Workers, D1 and Access. The figures and
 
 ## Limitations
 
-- The screen can only add items and list their titles. Everything else the API can do has no screen yet (Phase 2, next step).
+- There is no item page yet, so notes, type, priority, the needed-by date, the budget, links and archiving can only be set through the API (Phase 2, next step).
+- No filters, sorting or search yet. Within each status, the newest item is first.
 - Everyone who can sign in sees the same list. The database has columns for who added an item and whether it is private, but nothing sets or reads them until Phase 3.
 - Two people editing the same item at once: the last save wins.
-- The purchase date defaults to today in UTC, which can be a day off late in the evening. The caller can send its own date.
-- Prices are whole cents with no currency, because one deployment uses one currency.
+- Through the API, the purchase date defaults to today in UTC, which can be a day off late in the evening. The screen avoids this by sending the phone's own date.
+- Prices are whole cents with no currency, because one deployment uses one currency. The screen shows them as plain numbers such as 12.50, and accepts a comma or a dot as the decimal mark.
 - The tests run the queries against a real local database, but not the deployed one. After deploying, `npm run db:migrate:remote` applies new migrations to it.
 
 ## How this is built

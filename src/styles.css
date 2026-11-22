@@ -24,16 +24,20 @@ label {
   gap: 0.5rem;
 }
 
-input {
-  flex: 1;
-  min-width: 0;
-  /* 16px or larger stops iPhones zooming in when the box is tapped. */
+/* 16px or larger stops iPhones zooming in when a box is tapped. */
+input,
+select,
+button {
   font-size: 1rem;
   padding: 0.5rem;
 }
 
+.row input {
+  flex: 1;
+  min-width: 0;
+}
+
 button {
-  font-size: 1rem;
   padding: 0.5rem 1rem;
 }
 
@@ -41,6 +45,56 @@ button {
   color: #b00020;
 }
 
-ul {
-  padding-left: 1.25rem;
+h2 {
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+/* The Bought heading sits inside a fold-out, beside its arrow. */
+summary {
+  cursor: pointer;
+}
+
+summary h2 {
+  display: inline;
+}
+
+.items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.items > li {
+  border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  padding: 0.5rem 0;
+}
+
+/* Title and details on the left, the "Move to" menu on the right. */
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.item select {
+  flex-shrink: 0;
+  max-width: 45%;
+}
+
+.details {
+  font-size: 0.875rem;
+  opacity: 0.75;
+}
+
+.bought-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.bought-form .row {
+  margin-top: 0.5rem;
 }
