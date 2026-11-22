@@ -4,7 +4,7 @@ A shared household buying list, installed on your phone, that tracks things from
 
 ## Status
 
-Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The list is grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Each item has its own page for editing its details and links, and for archiving it. Filters, sorting and search come next.
+Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The list is grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Each item has its own page for editing its details and links, and for archiving it. The list can be searched, filtered by type, status and "needed soon", sorted, and can show archived items.
 
 - [`ROADMAP.md`](ROADMAP.md): what is being built, in what order.
 - [`docs/decisions/`](docs/decisions/): why it is being built this way, and what else was considered.
@@ -26,12 +26,12 @@ browser ──▶ Cloudflare Access (sign-in) ──▶ Worker ──▶ D1 data
 - `src/`: the front end, written in React and built by Vite. Plain React and plain CSS, with no other libraries. Its parts:
   - `App.tsx`: loads the list once and holds it, shows the page the address points at, and swaps in each item the server sends back after a change.
   - `route.ts` and `navigation.tsx`: which page to show for an address (`/` for the list, `/items/12` for an item), and moving between pages without a reload, so the phone's back button works. The Worker answers any address that is not a file or an API route with the app's page, which is what lets `/items/12` open directly.
-  - `ListPage.tsx`, `QuickAdd.tsx`, `StatusSection.tsx` and `ItemRow.tsx`: the list.
+  - `ListPage.tsx`, `QuickAdd.tsx`, `FindBar.tsx`, `StatusSection.tsx` and `ItemRow.tsx`: the list, with its search and filters.
   - `ItemPage.tsx`, `DetailsForm.tsx` and `LinksSection.tsx`: one item's page.
   - `MoveSelect.tsx`, `useStatusMove.ts` and `BoughtForm.tsx`: the Move to menu and its bought form, shared by both pages.
   - Each piece that changes something makes its own request, so it can show "saving" and errors where the person tapped.
   - `api.ts`: the only file that calls the API.
-  - `groups.ts`, `format.ts`, `itemForm.ts` and `route.ts`: plain functions with tests, for grouping the list, reading and showing prices and dates, turning the item form into only the changed fields, and reading addresses.
+  - `find.ts`, `groups.ts`, `format.ts`, `itemForm.ts` and `route.ts`: plain functions with tests, for search, filters and sort, grouping the list, reading and showing prices and dates, turning the item form into only the changed fields, and reading addresses.
   - `labels.ts`: the names people read for the API's fixed words.
 - `worker/`: the Worker. It uses [Hono](https://hono.dev) for the API routes, checks the Access token on every request, and hands everything that is not an API call to the front end's files. Its parts have separate jobs:
   - `items.ts`: the routes. Only the web side: read the request, call the pieces below, send the answer.
@@ -125,8 +125,9 @@ Nothing, on the free plans of Cloudflare Workers, D1 and Access. The figures and
 
 ## Limitations
 
-- No filters, sorting or search yet (Phase 2, next step). Within each status, the newest item is first.
-- There is no list of archived items. An archived item can be brought back from its own page, reached through the browser's history or its address, or found with `GET /api/items?archived=true`.
+- Search, filters and sort run on the phone over the whole list, which it loads in one go, archived items included. That is quick for hundreds of items, but not for many thousands.
+- Search matches whole phrases in titles and notes, not separate words in any order. "Needed soon" means the next 14 days or overdue, a fixed number in `src/find.ts`.
+- Search and filter choices last until the app is reloaded.
 - Everyone who can sign in sees the same list. The database has columns for who added an item and whether it is private, but nothing sets or reads them until Phase 3.
 - Two people editing the same item at once: the last save wins.
 - Through the API, the purchase date defaults to today in UTC, which can be a day off late in the evening. The screen avoids this by sending the phone's own date.
