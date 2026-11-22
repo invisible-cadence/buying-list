@@ -5,14 +5,14 @@ export type StatusGroup = { status: Status; items: Item[] };
 /**
  * Splits the list into one group per status, in the order an item travels
  * from idea to bought. Statuses with no items are left out, so the screen
- * shows no empty headings. Within a group, items keep the order they came in.
- * Archived items are left out too, because archiving hides an item.
+ * shows no empty headings. Within a group, items keep the order they came in,
+ * which is the order chosen in find.ts. Which items to show, including whether
+ * archived ones are, is also decided there, before grouping.
  */
 export function groupByStatus(items: readonly Item[]): StatusGroup[] {
-  const shown = items.filter((item) => item.archivedAt === null);
   return STATUSES.map((status) => ({
     status,
-    items: shown.filter((item) => item.status === status),
+    items: items.filter((item) => item.status === status),
   })).filter((group) => group.items.length > 0);
 }
 

@@ -125,3 +125,46 @@ textarea {
   padding: 0 0.75rem 0.75rem;
   margin-bottom: 1rem;
 }
+
+.find {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+
+.find details {
+  margin-top: 0.25rem;
+}
+
+.find .stack {
+  padding: 0.5rem 0;
+}
+
+/* A tick box with its words beside it, all of it tappable. */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.check input {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.narrowed {
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.25rem 0 0;
+}
+
+.tag {
+  font-size: 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}

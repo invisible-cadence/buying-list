@@ -32,8 +32,9 @@ async function itemRequest(path: string, method = "GET", body?: unknown): Promis
   return ((await response.json()) as { item: Item }).item;
 }
 
+/** Every item, archived ones included. The screen decides which to show. */
 export async function listItems(): Promise<Item[]> {
-  const response = await fetch("/api/items");
+  const response = await fetch("/api/items?archived=true");
   if (!response.ok) throw await failure(response);
   const body = (await response.json()) as { items: Item[] };
   return body.items;

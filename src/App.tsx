@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Item } from "../shared/items";
 import { errorMessage, listItems } from "./api";
+import { NO_FILTERS, type FindOptions } from "./find";
 import { withLatest } from "./groups";
 import { ItemPage } from "./ItemPage";
 import { ListPage } from "./ListPage";
@@ -14,13 +15,15 @@ import { LIST_PATH } from "./route";
  * returned, which replaces the old copy here. The screen never guesses what
  * changed. The list is loaded once and kept while the person moves between
  * pages, so going back to it is instant and keeps any change made on an
- * item's page.
+ * item's page. The search and filter choices are kept here for the same
+ * reason, and start fresh when the app is reloaded.
  */
 export function App() {
   const route = useRoute();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [findOptions, setFindOptions] = useState<FindOptions>(NO_FILTERS);
 
   useEffect(() => {
     listItems()
@@ -44,6 +47,8 @@ export function App() {
           items={items}
           loading={loading}
           loadError={loadError}
+          findOptions={findOptions}
+          onFindChange={setFindOptions}
           onAdded={handleAdded}
           onChanged={handleChanged}
         />
