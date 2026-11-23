@@ -4,7 +4,7 @@ A shared household buying list, installed on your phone, that tracks things from
 
 ## What it looks like
 
-The app as it stands at the end of Phase 3, taken in a phone-sized browser from a local copy filled with invented items.
+The app as it stands at the end of Phase 3, taken in a phone-sized browser in dark mode, from a local copy filled with invented items. The app follows the phone's light or dark setting.
 
 <p>
   <img src="docs/screenshots/list.png" alt="The list, grouped by status. Items show their priority, budget and needed-by date, one is tagged Private, and bought items show what was paid and where." width="250">
