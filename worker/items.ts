@@ -5,6 +5,7 @@ import {
   addLink,
   changeStatus,
   createItem,
+  deleteItem,
   getItem,
   listItems,
   removeLink,
@@ -133,6 +134,14 @@ items.post("/:id/unarchive", async (c) => {
   const id = idFrom(c.req.param("id"));
   const item = id === null ? null : await setArchived(c.env.DB, c.get("viewer"), id, false);
   return item ? c.json({ item }) : notFound(c);
+});
+
+// Deleting is for good. The screen asks first, and anyone who can see an item
+// may delete it, as with archiving.
+items.delete("/:id", async (c) => {
+  const id = idFrom(c.req.param("id"));
+  const deleted = id !== null && (await deleteItem(c.env.DB, c.get("viewer"), id));
+  return deleted ? c.body(null, 204) : notFound(c);
 });
 
 items.post("/:id/links", async (c) => {

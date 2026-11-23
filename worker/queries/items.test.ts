@@ -3,6 +3,7 @@ import {
   addLink,
   changeStatus,
   createItem,
+  deleteItem,
   getItem,
   listItems,
   removeLink,
@@ -292,6 +293,35 @@ describe("archiving", () => {
   });
 });
 
+describe("deleting", () => {
+  it("removes the item and its links for good", async () => {
+    const kept = await createItem(db, ALEX, { title: "Kept" });
+    const gone = await createItem(db, ALEX, { title: "Gone" });
+    await addLink(db, ALEX, gone.id, { url: "https://shop.example" });
+
+    expect(await deleteItem(db, ALEX, gone.id)).toBe(true);
+    expect(await getItem(db, ALEX, gone.id)).toBeNull();
+    expect((await listItems(db, ALEX, { includeArchived: true })).map((i) => i.id)).toEqual([
+      kept.id,
+    ]);
+    const result = await db.prepare("SELECT count(*) AS n FROM links").first<{ n: number }>();
+    expect(result?.n).toBe(0);
+  });
+
+  it("deletes an archived item too", async () => {
+    const item = await createItem(db, ALEX, { title: "Archived" });
+    await setArchived(db, ALEX, item.id, true);
+    expect(await deleteItem(db, ALEX, item.id)).toBe(true);
+  });
+
+  it("returns false for an item that does not exist, or was already deleted", async () => {
+    const item = await createItem(db, ALEX, { title: "Kettle" });
+    await deleteItem(db, ALEX, item.id);
+    expect(await deleteItem(db, ALEX, item.id)).toBe(false);
+    expect(await deleteItem(db, ALEX, 999)).toBe(false);
+  });
+});
+
 describe("links", () => {
   it("adds links in the order they were added, with an optional label", async () => {
     const created = await createItem(db, ALEX, { title: "Kettle" });
@@ -391,6 +421,7 @@ describe("who added an item, and private items", () => {
     expect(await setArchived(db, SAM, id, true)).toBeNull();
     expect(await addLink(db, SAM, id, { url: "https://shop.example/other" })).toBeNull();
     expect(await removeLink(db, SAM, id, linkId)).toBeNull();
+    expect(await deleteItem(db, SAM, id)).toBe(false);
 
     // Nothing changed, including the links.
     expect(await getItem(db, ALEX, id)).toEqual(before);
@@ -406,6 +437,13 @@ describe("who added an item, and private items", () => {
     });
     expect((await removeLink(db, ALEX, id, linkId))?.links).toEqual([]);
     expect((await setArchived(db, ALEX, id, true))?.archivedAt).not.toBeNull();
+    expect(await deleteItem(db, ALEX, id)).toBe(true);
+  });
+
+  it("lets anyone who can see a shared item delete it", async () => {
+    const item = await createItem(db, ALEX, { title: "Kettle" });
+    expect(await deleteItem(db, SAM, item.id)).toBe(true);
+    expect(await getItem(db, ALEX, item.id)).toBeNull();
   });
 
   it("shows an item to everyone again once its adder makes it shared", async () => {

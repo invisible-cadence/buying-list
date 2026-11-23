@@ -213,6 +213,19 @@ export async function setArchived(
 }
 
 /**
+ * Deletes an item for good, with its links (the database removes those itself).
+ * Returns false if there is no such item or the viewer may not see it, so
+ * nobody can delete someone else's private item.
+ */
+export async function deleteItem(db: D1Database, viewer: string, id: number): Promise<boolean> {
+  const deleted = await db
+    .prepare(`DELETE FROM items WHERE id = ? AND ${VISIBLE} RETURNING id`)
+    .bind(id, viewer)
+    .first<{ id: number }>();
+  return deleted !== null;
+}
+
+/**
  * Runs an UPDATE on one item the viewer may see, then returns the item as it
  * now is. With addedByViewer, it also requires the viewer to have added it.
  */
