@@ -5,6 +5,7 @@ import { addItem, errorMessage } from "./api";
 /** The box at the top: type a title, tap Add. Everything else is set later. */
 export function QuickAdd({ onAdded }: { onAdded: (item: Item) => void }) {
   const [title, setTitle] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,8 +16,9 @@ export function QuickAdd({ onAdded }: { onAdded: (item: Item) => void }) {
     setSaving(true);
     setError(null);
     try {
-      onAdded(await addItem(title));
+      onAdded(await addItem(title, isPrivate));
       setTitle("");
+      setIsPrivate(false);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -39,6 +41,14 @@ export function QuickAdd({ onAdded }: { onAdded: (item: Item) => void }) {
           Add
         </button>
       </div>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={isPrivate}
+          onChange={(event) => setIsPrivate(event.target.checked)}
+        />
+        Private (only you will see it)
+      </label>
       {error && <p role="alert">{error}</p>}
     </form>
   );

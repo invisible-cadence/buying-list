@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Item } from "../shared/items";
-import { errorMessage, listItems } from "./api";
+import { errorMessage, getMe, listItems } from "./api";
 import { NO_FILTERS, type FindOptions } from "./find";
 import { withLatest } from "./groups";
 import { ItemPage } from "./ItemPage";
@@ -24,12 +24,20 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [findOptions, setFindOptions] = useState<FindOptions>(NO_FILTERS);
+  // Who is signed in. Only used to say "you" and to show the private tick box
+  // on items this person added. The server enforces the rules either way.
+  const [viewer, setViewer] = useState<string | null>(null);
 
   useEffect(() => {
     listItems()
       .then(setItems)
       .catch((e: unknown) => setLoadError(errorMessage(e)))
       .finally(() => setLoading(false));
+    // If this fails, the screen just does not offer the private tick box on
+    // existing items, so there is nothing more to show.
+    getMe()
+      .then(setViewer)
+      .catch((e: unknown) => console.error("Could not read who is signed in:", e));
   }, []);
 
   function handleAdded(item: Item) {
@@ -56,7 +64,7 @@ export function App() {
     case "item":
       // The key gives each item a fresh page, so nothing typed on one item's
       // page carries over to the next.
-      return <ItemPage key={route.id} id={route.id} onChanged={handleChanged} />;
+      return <ItemPage key={route.id} id={route.id} viewer={viewer} onChanged={handleChanged} />;
     case "not_found":
       return (
         <main>
