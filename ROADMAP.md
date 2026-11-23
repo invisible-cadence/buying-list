@@ -81,7 +81,7 @@ The real data model and a list worth using.
 An item holds: a title and notes, a status, links, a type (one-off, restock, gift, seasonal), a priority, a needed-by date, a rough budget, bought details, who added it, and whether it is private.
 
 1. A migration for the full model, with a separate `links` table.
-2. API routes to create, edit, change status and archive, with input validated on the way in.
+2. API routes to create, edit, change status, archive and delete, with input validated on the way in.
 3. Screens: the list grouped by status, an item page, and a quick-add box.
 4. Filters by type, by status and by "needed soon", a search over titles and notes, a choice of sort order, and a way to show archived items.
 5. Tests for the status rules and the validation.

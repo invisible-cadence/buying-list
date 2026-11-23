@@ -4,7 +4,7 @@ A shared household buying list, installed on your phone, that tracks things from
 
 ## Status
 
-Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The list is grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Each item records who added it, and can be private, so that only that person sees it. Each item has its own page for editing its details and links, and for archiving it. The list can be searched, filtered by type, status and "needed soon", sorted, and can show archived items. It can be added to a phone's home screen and opens like an app.
+Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The list is grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Each item records who added it, and can be private, so that only that person sees it. Each item has its own page for editing its details and links, and for archiving or deleting it. The list can be searched, filtered by type, status and "needed soon", sorted, and can show archived items. It can be added to a phone's home screen and opens like an app.
 
 - [`ROADMAP.md`](ROADMAP.md): what is being built, in what order.
 - [`docs/decisions/`](docs/decisions/): why it is being built this way, and what else was considered.
@@ -58,6 +58,7 @@ Every route needs the sign-in token, and answers as the person it names: a priva
 | `PATCH /api/items/:id` | Changes any of those fields. Fields left out stay as they are, and `null` clears the date or budget. Only the person who added an item may change `isPrivate`. |
 | `POST /api/items/:id/status` | Moves the item to a status: `idea`, `researching`, `decided`, `waiting_for_money`, `ready_to_buy` or `bought`. Any status can move to any other. `bought` also takes optional `boughtOn`, `paidCents` and `boughtFrom`. Moving out of `bought` clears them, and sending `bought` again for an item that is already bought keeps what it has, apart from any detail you send, so a price can be corrected. |
 | `POST /api/items/:id/archive` and `/unarchive` | Hides an item from the list, or brings it back. |
+| `DELETE /api/items/:id` | Deletes an item and its links for good, answering 204 with no body. |
 | `POST /api/items/:id/links` | Adds a link: `url` (must start with `http://` or `https://`) and an optional `label`. |
 | `DELETE /api/items/:id/links/:linkId` | Removes a link. |
 
