@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Item } from "../shared/items";
 import { errorMessage, getItem, setArchived } from "./api";
 import { BoughtForm } from "./BoughtForm";
+import { DeleteSection } from "./DeleteSection";
 import { DetailsForm } from "./DetailsForm";
 import { summaryOf } from "./format";
 import { STATUS_LABELS } from "./labels";
@@ -17,13 +18,15 @@ type Props = {
   viewer: string | null;
   /** Called with the item as the server sent it back after any change, so the list stays current. */
   onChanged: (item: Item) => void;
+  /** Called once the item has been deleted. */
+  onDeleted: (id: number) => void;
 };
 
 /**
  * One item's page. It loads the item itself, so it also works when opened
  * straight from its address or after a reload.
  */
-export function ItemPage({ id, viewer, onChanged }: Props) {
+export function ItemPage({ id, viewer, onChanged, onDeleted }: Props) {
   const [item, setItem] = useState<Item | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -49,7 +52,7 @@ export function ItemPage({ id, viewer, onChanged }: Props) {
         <Link to={LIST_PATH}>← Back to list</Link>
       </p>
       {item ? (
-        <ItemDetails item={item} viewer={viewer} onChanged={handleChanged} />
+        <ItemDetails item={item} viewer={viewer} onChanged={handleChanged} onDeleted={onDeleted} />
       ) : loadError ? (
         <p role="alert">{loadError}</p>
       ) : (
@@ -63,9 +66,10 @@ type DetailsProps = {
   item: Item;
   viewer: string | null;
   onChanged: (item: Item) => void;
+  onDeleted: (id: number) => void;
 };
 
-function ItemDetails({ item, viewer, onChanged }: DetailsProps) {
+function ItemDetails({ item, viewer, onChanged, onDeleted }: DetailsProps) {
   const status = useStatusMove(item, onChanged);
   const [archiving, setArchiving] = useState(false);
   const [archiveError, setArchiveError] = useState<string | null>(null);
@@ -140,6 +144,8 @@ function ItemDetails({ item, viewer, onChanged }: DetailsProps) {
         </section>
       )}
       {archiveError && <p role="alert">{archiveError}</p>}
+
+      <DeleteSection item={item} onDeleted={onDeleted} />
     </>
   );
 }

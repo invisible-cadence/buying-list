@@ -5,7 +5,7 @@ import { NO_FILTERS, type FindOptions } from "./find";
 import { withLatest } from "./groups";
 import { ItemPage } from "./ItemPage";
 import { ListPage } from "./ListPage";
-import { Link, useRoute } from "./navigation";
+import { Link, navigate, useRoute } from "./navigation";
 import { LIST_PATH } from "./route";
 
 /**
@@ -48,6 +48,11 @@ export function App() {
     setItems((current) => withLatest(current, changed));
   }
 
+  function handleDeleted(id: number) {
+    setItems((current) => current.filter((item) => item.id !== id));
+    navigate(LIST_PATH);
+  }
+
   switch (route.page) {
     case "list":
       return (
@@ -64,7 +69,15 @@ export function App() {
     case "item":
       // The key gives each item a fresh page, so nothing typed on one item's
       // page carries over to the next.
-      return <ItemPage key={route.id} id={route.id} viewer={viewer} onChanged={handleChanged} />;
+      return (
+        <ItemPage
+          key={route.id}
+          id={route.id}
+          viewer={viewer}
+          onChanged={handleChanged}
+          onDeleted={handleDeleted}
+        />
+      );
     case "not_found":
       return (
         <main>
