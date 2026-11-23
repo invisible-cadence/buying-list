@@ -83,6 +83,9 @@ export const createItemSchema = z.strictObject(
     priority: priority.optional(),
     neededBy: date("The needed-by date").nullable().optional(),
     budgetCents: cents("The budget").nullable().optional(),
+    // Who added the item is never accepted from the caller: it comes from the
+    // sign-in token. Only whether it is private can be chosen.
+    isPrivate: z.boolean({ error: "Private must be true or false." }).optional(),
   },
   { error: notAnObject },
 );

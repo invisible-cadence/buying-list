@@ -15,6 +15,8 @@ const item: Item = {
   boughtOn: null,
   paidCents: null,
   boughtFrom: "",
+  addedBy: null,
+  isPrivate: false,
   archivedAt: null,
   createdAt: "2026-11-21 10:00:00",
   updatedAt: "2026-11-21 10:00:00",
@@ -58,6 +60,12 @@ describe("changesFrom", () => {
   it("trims the title, and does not count spaces alone as a change", () => {
     expect(changesFrom(item, { ...formValuesOf(item), title: "  Electric kettle " })).toEqual({
       changes: {},
+    });
+  });
+
+  it("sends the private setting only when it changed", () => {
+    expect(changesFrom(item, { ...formValuesOf(item), isPrivate: true })).toEqual({
+      changes: { isPrivate: true },
     });
   });
 

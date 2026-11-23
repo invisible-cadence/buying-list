@@ -18,6 +18,8 @@ function item(id: number, fields: Partial<Item> = {}): Item {
     boughtOn: null,
     paidCents: null,
     boughtFrom: "",
+    addedBy: null,
+    isPrivate: false,
     archivedAt: null,
     createdAt: "2026-11-21 10:00:00",
     updatedAt: "2026-11-21 10:00:00",

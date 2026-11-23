@@ -14,6 +14,10 @@ export function createApp(keySource: KeySource = remoteKeys) {
   // for the front end's own files (see "run_worker_first" in wrangler.jsonc).
   app.use("*", requireAccess(keySource));
 
+  // Who is signed in, so the screen can say "you" and offer the controls
+  // that only the person who added an item may use.
+  app.get("/api/me", (c) => c.json({ email: c.get("viewer") }));
+
   app.route("/api/items", items);
 
   // Anything under /api that is not a route above is a mistake by the caller,

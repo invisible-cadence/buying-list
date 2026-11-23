@@ -74,9 +74,18 @@ describe("creating an item", () => {
     expect(problem(createItemSchema, { title: "x", budgetCents: "60" })).toMatch(/number/);
   });
 
-  it("rejects a field it does not know, including the ones Phase 3 will add", () => {
-    expect(problem(createItemSchema, { title: "x", isPrivate: true })).toMatch(/isPrivate/);
+  it("rejects a field it does not know, including who added the item, which only the server sets", () => {
+    expect(problem(createItemSchema, { title: "x", addedBy: "sam@example.com" })).toMatch(
+      /addedBy/,
+    );
     expect(problem(createItemSchema, { title: "x", status: "bought" })).toMatch(/status/);
+  });
+
+  it("accepts whether the item is private, as true or false only", () => {
+    expect(problem(createItemSchema, { title: "x", isPrivate: true })).toBeUndefined();
+    expect(problem(createItemSchema, { title: "x", isPrivate: "yes" })).toBe(
+      "Private must be true or false.",
+    );
   });
 });
 

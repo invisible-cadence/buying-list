@@ -35,12 +35,16 @@ beforeEach(async () => {
   await database.reset();
 });
 
+/** Two invented people who share the list. */
+const ALEX = "alex@example.com";
+const SAM = "sam@example.com";
+
 /** Waits a few milliseconds, so two timestamps cannot be equal. */
 const pause = () => new Promise((resolve) => setTimeout(resolve, 10));
 
 describe("creating and reading items", () => {
   it("starts an item as an idea with sensible defaults", async () => {
-    const item = await createItem(db, { title: "Kettle" });
+    const item = await createItem(db, ALEX, { title: "Kettle" });
     expect(item).toMatchObject({
       title: "Kettle",
       notes: "",
@@ -59,7 +63,7 @@ describe("creating and reading items", () => {
   });
 
   it("keeps every field it is given", async () => {
-    const item = await createItem(db, {
+    const item = await createItem(db, ALEX, {
       title: "Kettle",
       notes: "Quiet one",
       type: "gift",
@@ -77,26 +81,26 @@ describe("creating and reading items", () => {
   });
 
   it("finds an item by id, and says so when there is none", async () => {
-    const created = await createItem(db, { title: "Kettle" });
-    expect(await getItem(db, created.id)).toEqual(created);
-    expect(await getItem(db, created.id + 1000)).toBeNull();
+    const created = await createItem(db, ALEX, { title: "Kettle" });
+    expect(await getItem(db, ALEX, created.id)).toEqual(created);
+    expect(await getItem(db, ALEX, created.id + 1000)).toBeNull();
   });
 
   it("lists the newest item first", async () => {
-    await createItem(db, { title: "First" });
-    await createItem(db, { title: "Second" });
-    const titles = (await listItems(db)).map((item) => item.title);
+    await createItem(db, ALEX, { title: "First" });
+    await createItem(db, ALEX, { title: "Second" });
+    const titles = (await listItems(db, ALEX)).map((item) => item.title);
     expect(titles).toEqual(["Second", "First"]);
   });
 
   it("returns each item with its own links only", async () => {
-    const kettle = await createItem(db, { title: "Kettle" });
-    const toaster = await createItem(db, { title: "Toaster" });
-    await addLink(db, kettle.id, { url: "https://shop.example/kettle" });
-    await addLink(db, toaster.id, { url: "https://shop.example/toaster" });
+    const kettle = await createItem(db, ALEX, { title: "Kettle" });
+    const toaster = await createItem(db, ALEX, { title: "Toaster" });
+    await addLink(db, ALEX, kettle.id, { url: "https://shop.example/kettle" });
+    await addLink(db, ALEX, toaster.id, { url: "https://shop.example/toaster" });
 
     const byTitle = Object.fromEntries(
-      (await listItems(db)).map((item) => [item.title, item.links.map((l) => l.url)]),
+      (await listItems(db, ALEX)).map((item) => [item.title, item.links.map((l) => l.url)]),
     );
     expect(byTitle).toEqual({
       Kettle: ["https://shop.example/kettle"],
@@ -107,12 +111,12 @@ describe("creating and reading items", () => {
 
 describe("editing", () => {
   it("changes only the fields it is given", async () => {
-    const created = await createItem(db, {
+    const created = await createItem(db, ALEX, {
       title: "Kettle",
       notes: "Quiet one",
       budgetCents: 6000,
     });
-    const edited = await updateItem(db, created.id, { title: "Electric kettle" });
+    const edited = await updateItem(db, ALEX, created.id, { title: "Electric kettle" });
     expect(edited).toMatchObject({
       title: "Electric kettle",
       notes: "Quiet one",
@@ -121,45 +125,46 @@ describe("editing", () => {
   });
 
   it("clears a date or budget when given null", async () => {
-    const created = await createItem(db, {
+    const created = await createItem(db, ALEX, {
       title: "Kettle",
       neededBy: "2026-12-24",
       budgetCents: 6000,
     });
-    const edited = await updateItem(db, created.id, { neededBy: null, budgetCents: null });
+    const edited = await updateItem(db, ALEX, created.id, { neededBy: null, budgetCents: null });
     expect(edited).toMatchObject({ neededBy: null, budgetCents: null });
   });
 
   it("updates the time it was last changed, and leaves the time it was created", async () => {
-    const created = await createItem(db, { title: "Kettle" });
+    const created = await createItem(db, ALEX, { title: "Kettle" });
     await pause();
-    const edited = await updateItem(db, created.id, { notes: "Quiet one" });
+    const edited = await updateItem(db, ALEX, created.id, { notes: "Quiet one" });
     expect(edited?.createdAt).toBe(created.createdAt);
     expect(edited!.updatedAt > created.updatedAt).toBe(true);
   });
 
   it("returns null for an item that does not exist", async () => {
-    expect(await updateItem(db, 999, { title: "Nothing" })).toBeNull();
+    expect(await updateItem(db, ALEX, 999, { title: "Nothing" })).toBeNull();
   });
 
   it("refuses to run with nothing to change, rather than writing broken SQL", async () => {
-    const created = await createItem(db, { title: "Kettle" });
-    await expect(updateItem(db, created.id, {})).rejects.toThrow("no changes");
+    const created = await createItem(db, ALEX, { title: "Kettle" });
+    await expect(updateItem(db, ALEX, created.id, {})).rejects.toThrow("no changes");
   });
 
   it("treats text that looks like SQL as plain text", async () => {
     const nasty = "x'); DROP TABLE items; --";
-    const created = await createItem(db, { title: nasty });
-    expect((await getItem(db, created.id))?.title).toBe(nasty);
-    expect(await listItems(db)).toHaveLength(1);
+    const created = await createItem(db, ALEX, { title: nasty });
+    expect((await getItem(db, ALEX, created.id))?.title).toBe(nasty);
+    expect(await listItems(db, ALEX)).toHaveLength(1);
   });
 });
 
 describe("status", () => {
   it("records the purchase when an item becomes bought", async () => {
-    const created = await createItem(db, { title: "Kettle" });
+    const created = await createItem(db, ALEX, { title: "Kettle" });
     const bought = await changeStatus(
       db,
+      ALEX,
       created.id,
       "bought",
       { boughtOn: "2026-11-18", paidCents: 4999, boughtFrom: "Example Shop" },
@@ -174,21 +179,22 @@ describe("status", () => {
   });
 
   it("uses today's date when the purchase date is left out", async () => {
-    const created = await createItem(db, { title: "Kettle" });
-    const bought = await changeStatus(db, created.id, "bought", {}, "2026-11-20");
+    const created = await createItem(db, ALEX, { title: "Kettle" });
+    const bought = await changeStatus(db, ALEX, created.id, "bought", {}, "2026-11-20");
     expect(bought).toMatchObject({ boughtOn: "2026-11-20", paidCents: null });
   });
 
   it("clears the purchase details when an item moves back out of bought", async () => {
-    const created = await createItem(db, { title: "Kettle" });
+    const created = await createItem(db, ALEX, { title: "Kettle" });
     await changeStatus(
       db,
+      ALEX,
       created.id,
       "bought",
       { paidCents: 4999, boughtFrom: "Shop" },
       "2026-11-20",
     );
-    const back = await changeStatus(db, created.id, "researching", {}, "2026-11-21");
+    const back = await changeStatus(db, ALEX, created.id, "researching", {}, "2026-11-21");
     expect(back).toMatchObject({
       status: "researching",
       boughtOn: null,
@@ -198,19 +204,21 @@ describe("status", () => {
   });
 
   it("keeps the purchase details when an item that is already bought is marked bought again", async () => {
-    const created = await createItem(db, { title: "Kettle" });
+    const created = await createItem(db, ALEX, { title: "Kettle" });
     await changeStatus(
       db,
+      ALEX,
       created.id,
       "bought",
       { boughtOn: "2026-11-10", paidCents: 4999, boughtFrom: "Shop" },
       "2026-11-20",
     );
-    const again = await changeStatus(db, created.id, "bought", {}, "2026-11-20");
+    const again = await changeStatus(db, ALEX, created.id, "bought", {}, "2026-11-20");
     expect(again).toMatchObject({ boughtOn: "2026-11-10", paidCents: 4999, boughtFrom: "Shop" });
 
     const corrected = await changeStatus(
       db,
+      ALEX,
       created.id,
       "bought",
       { paidCents: 4500 },
@@ -224,7 +232,7 @@ describe("status", () => {
   });
 
   it("lets an item move through every status, in any direction", async () => {
-    const created = await createItem(db, { title: "Kettle" });
+    const created = await createItem(db, ALEX, { title: "Kettle" });
     for (const status of [
       "decided",
       "idea",
@@ -232,61 +240,63 @@ describe("status", () => {
       "waiting_for_money",
       "researching",
     ] as const) {
-      expect((await changeStatus(db, created.id, status, {}, "2026-11-20"))?.status).toBe(status);
+      expect((await changeStatus(db, ALEX, created.id, status, {}, "2026-11-20"))?.status).toBe(
+        status,
+      );
     }
   });
 
   it("returns null for an item that does not exist", async () => {
-    expect(await changeStatus(db, 999, "bought", {}, "2026-11-20")).toBeNull();
+    expect(await changeStatus(db, ALEX, 999, "bought", {}, "2026-11-20")).toBeNull();
   });
 });
 
 describe("archiving", () => {
   it("hides an archived item from the list, but it can still be found by id", async () => {
-    const kept = await createItem(db, { title: "Kept" });
-    const archived = await createItem(db, { title: "Archived" });
-    await setArchived(db, archived.id, true);
+    const kept = await createItem(db, ALEX, { title: "Kept" });
+    const archived = await createItem(db, ALEX, { title: "Archived" });
+    await setArchived(db, ALEX, archived.id, true);
 
-    expect((await listItems(db)).map((item) => item.id)).toEqual([kept.id]);
-    expect(await getItem(db, archived.id)).toMatchObject({ title: "Archived" });
+    expect((await listItems(db, ALEX)).map((item) => item.id)).toEqual([kept.id]);
+    expect(await getItem(db, ALEX, archived.id)).toMatchObject({ title: "Archived" });
   });
 
   it("includes archived items when asked", async () => {
-    const item = await createItem(db, { title: "Archived" });
-    await setArchived(db, item.id, true);
-    expect(await listItems(db, { includeArchived: true })).toHaveLength(1);
+    const item = await createItem(db, ALEX, { title: "Archived" });
+    await setArchived(db, ALEX, item.id, true);
+    expect(await listItems(db, ALEX, { includeArchived: true })).toHaveLength(1);
   });
 
   it("keeps the status of an archived item, so a bought item stays bought", async () => {
-    const created = await createItem(db, { title: "Kettle" });
-    await changeStatus(db, created.id, "bought", {}, "2026-11-20");
-    const archived = await setArchived(db, created.id, true);
+    const created = await createItem(db, ALEX, { title: "Kettle" });
+    await changeStatus(db, ALEX, created.id, "bought", {}, "2026-11-20");
+    const archived = await setArchived(db, ALEX, created.id, true);
     expect(archived).toMatchObject({ status: "bought", boughtOn: "2026-11-20" });
     expect(archived?.archivedAt).not.toBeNull();
   });
 
   it("brings an item back, and archiving twice changes nothing", async () => {
-    const created = await createItem(db, { title: "Kettle" });
-    const first = await setArchived(db, created.id, true);
+    const created = await createItem(db, ALEX, { title: "Kettle" });
+    const first = await setArchived(db, ALEX, created.id, true);
     await pause();
-    const second = await setArchived(db, created.id, true);
+    const second = await setArchived(db, ALEX, created.id, true);
     expect(second?.archivedAt).toBe(first?.archivedAt);
 
-    const restored = await setArchived(db, created.id, false);
+    const restored = await setArchived(db, ALEX, created.id, false);
     expect(restored?.archivedAt).toBeNull();
-    expect(await listItems(db)).toHaveLength(1);
+    expect(await listItems(db, ALEX)).toHaveLength(1);
   });
 
   it("returns null for an item that does not exist", async () => {
-    expect(await setArchived(db, 999, true)).toBeNull();
+    expect(await setArchived(db, ALEX, 999, true)).toBeNull();
   });
 });
 
 describe("links", () => {
   it("adds links in the order they were added, with an optional label", async () => {
-    const created = await createItem(db, { title: "Kettle" });
-    await addLink(db, created.id, { url: "https://shop.example/a", label: "Shop A" });
-    const item = await addLink(db, created.id, { url: "https://shop.example/b" });
+    const created = await createItem(db, ALEX, { title: "Kettle" });
+    await addLink(db, ALEX, created.id, { url: "https://shop.example/a", label: "Shop A" });
+    const item = await addLink(db, ALEX, created.id, { url: "https://shop.example/b" });
     expect(item?.links.map((l) => [l.url, l.label])).toEqual([
       ["https://shop.example/a", "Shop A"],
       ["https://shop.example/b", ""],
@@ -294,39 +304,139 @@ describe("links", () => {
   });
 
   it("adds nothing and returns null when the item does not exist", async () => {
-    expect(await addLink(db, 999, { url: "https://shop.example" })).toBeNull();
+    expect(await addLink(db, ALEX, 999, { url: "https://shop.example" })).toBeNull();
     const result = await db.prepare("SELECT count(*) AS n FROM links").first<{ n: number }>();
     expect(result?.n).toBe(0);
   });
 
   it("removes a link from its own item", async () => {
-    const created = await createItem(db, { title: "Kettle" });
-    const withLink = await addLink(db, created.id, { url: "https://shop.example" });
+    const created = await createItem(db, ALEX, { title: "Kettle" });
+    const withLink = await addLink(db, ALEX, created.id, { url: "https://shop.example" });
     const linkId = withLink!.links[0]!.id;
-    expect((await removeLink(db, created.id, linkId))?.links).toEqual([]);
+    expect((await removeLink(db, ALEX, created.id, linkId))?.links).toEqual([]);
   });
 
   it("does not remove a link through the wrong item", async () => {
-    const kettle = await createItem(db, { title: "Kettle" });
-    const toaster = await createItem(db, { title: "Toaster" });
-    const withLink = await addLink(db, kettle.id, { url: "https://shop.example" });
+    const kettle = await createItem(db, ALEX, { title: "Kettle" });
+    const toaster = await createItem(db, ALEX, { title: "Toaster" });
+    const withLink = await addLink(db, ALEX, kettle.id, { url: "https://shop.example" });
     const linkId = withLink!.links[0]!.id;
 
-    expect(await removeLink(db, toaster.id, linkId)).toBeNull();
-    expect((await getItem(db, kettle.id))?.links).toHaveLength(1);
+    expect(await removeLink(db, ALEX, toaster.id, linkId)).toBeNull();
+    expect((await getItem(db, ALEX, kettle.id))?.links).toHaveLength(1);
   });
 
   it("returns null when the link does not exist", async () => {
-    const created = await createItem(db, { title: "Kettle" });
-    expect(await removeLink(db, created.id, 999)).toBeNull();
+    const created = await createItem(db, ALEX, { title: "Kettle" });
+    expect(await removeLink(db, ALEX, created.id, 999)).toBeNull();
   });
 
   it("is deleted along with its item", async () => {
-    const created = await createItem(db, { title: "Kettle" });
-    await addLink(db, created.id, { url: "https://shop.example" });
+    const created = await createItem(db, ALEX, { title: "Kettle" });
+    await addLink(db, ALEX, created.id, { url: "https://shop.example" });
     await db.prepare("DELETE FROM items WHERE id = ?").bind(created.id).run();
     const result = await db.prepare("SELECT count(*) AS n FROM links").first<{ n: number }>();
     expect(result?.n).toBe(0);
+  });
+});
+
+describe("who added an item, and private items", () => {
+  /** An item added before sign-in names were recorded, as the migration leaves them. */
+  async function addOldItem(title: string): Promise<number> {
+    const row = await db
+      .prepare("INSERT INTO items (title) VALUES (?) RETURNING id")
+      .bind(title)
+      .first<{ id: number }>();
+    return row!.id;
+  }
+
+  /** A private item added by Alex, with one link. */
+  async function alexsSecret() {
+    const item = await createItem(db, ALEX, { title: "Present for Sam", isPrivate: true });
+    const withLink = await addLink(db, ALEX, item.id, { url: "https://shop.example/present" });
+    return { id: item.id, linkId: withLink!.links[0]!.id };
+  }
+
+  it("records who added an item, and makes it shared unless asked", async () => {
+    const item = await createItem(db, ALEX, { title: "Kettle" });
+    expect(item).toMatchObject({ addedBy: ALEX, isPrivate: false });
+  });
+
+  it("shows a shared item to everyone, whoever added it", async () => {
+    const item = await createItem(db, ALEX, { title: "Kettle" });
+    expect(await getItem(db, SAM, item.id)).toMatchObject({ title: "Kettle", addedBy: ALEX });
+    expect((await listItems(db, SAM)).map((i) => i.id)).toEqual([item.id]);
+  });
+
+  it("shows a private item to the person who added it", async () => {
+    const { id } = await alexsSecret();
+    expect(await getItem(db, ALEX, id)).toMatchObject({ isPrivate: true });
+    expect((await listItems(db, ALEX)).map((i) => i.id)).toEqual([id]);
+  });
+
+  it("hides a private item from everyone else, in the list and by id", async () => {
+    const { id } = await alexsSecret();
+    expect(await listItems(db, SAM)).toEqual([]);
+    expect(await listItems(db, SAM, { includeArchived: true })).toEqual([]);
+    expect(await getItem(db, SAM, id)).toBeNull();
+  });
+
+  it("does not let anyone else change a private item in any way", async () => {
+    const { id, linkId } = await alexsSecret();
+    const before = await getItem(db, ALEX, id);
+
+    expect(await updateItem(db, SAM, id, { title: "Found it" })).toBeNull();
+    expect(await updateItem(db, SAM, id, { isPrivate: false })).toBeNull();
+    expect(await changeStatus(db, SAM, id, "bought", {}, "2026-11-23")).toBeNull();
+    expect(await setArchived(db, SAM, id, true)).toBeNull();
+    expect(await addLink(db, SAM, id, { url: "https://shop.example/other" })).toBeNull();
+    expect(await removeLink(db, SAM, id, linkId)).toBeNull();
+
+    // Nothing changed, including the links.
+    expect(await getItem(db, ALEX, id)).toEqual(before);
+    const links = await db.prepare("SELECT count(*) AS n FROM links").first<{ n: number }>();
+    expect(links?.n).toBe(1);
+  });
+
+  it("lets the person who added it do everything", async () => {
+    const { id, linkId } = await alexsSecret();
+    expect(await updateItem(db, ALEX, id, { notes: "Blue" })).toMatchObject({ notes: "Blue" });
+    expect(await changeStatus(db, ALEX, id, "decided", {}, "2026-11-23")).toMatchObject({
+      status: "decided",
+    });
+    expect((await removeLink(db, ALEX, id, linkId))?.links).toEqual([]);
+    expect((await setArchived(db, ALEX, id, true))?.archivedAt).not.toBeNull();
+  });
+
+  it("shows an item to everyone again once its adder makes it shared", async () => {
+    const { id } = await alexsSecret();
+    await updateItem(db, ALEX, id, { isPrivate: false });
+    expect(await getItem(db, SAM, id)).toMatchObject({ isPrivate: false });
+  });
+
+  it("lets only the person who added an item make it private", async () => {
+    const item = await createItem(db, ALEX, { title: "Kettle" });
+    // Sam can see and edit the shared item, but not hide it from Alex.
+    expect(await updateItem(db, SAM, item.id, { isPrivate: true })).toBeNull();
+    expect(await getItem(db, ALEX, item.id)).toMatchObject({ isPrivate: false });
+  });
+
+  it("shows items added before names were recorded to everyone, and none can make them private", async () => {
+    const id = await addOldItem("Old kettle");
+    expect(await getItem(db, ALEX, id)).toMatchObject({ addedBy: null, isPrivate: false });
+    expect(await getItem(db, SAM, id)).not.toBeNull();
+    expect(await updateItem(db, ALEX, id, { isPrivate: true })).toBeNull();
+    expect(await updateItem(db, ALEX, id, { notes: "Still shared" })).toMatchObject({
+      notes: "Still shared",
+    });
+  });
+
+  it("keeps each person's private items apart", async () => {
+    const alexs = await createItem(db, ALEX, { title: "For Sam", isPrivate: true });
+    const sams = await createItem(db, SAM, { title: "For Alex", isPrivate: true });
+    const shared = await createItem(db, SAM, { title: "Kettle" });
+    expect((await listItems(db, ALEX)).map((i) => i.id)).toEqual([shared.id, alexs.id]);
+    expect((await listItems(db, SAM)).map((i) => i.id)).toEqual([shared.id, sams.id]);
   });
 });
 
@@ -356,7 +466,7 @@ describe("the rules the database enforces itself", () => {
   });
 
   it("refuses a link that is not a web address, and a link to a missing item", async () => {
-    const created = await createItem(db, { title: "Kettle" });
+    const created = await createItem(db, ALEX, { title: "Kettle" });
     await refused(`INSERT INTO links (item_id, url) VALUES (${created.id}, 'javascript:alert(1)')`);
     await refused("INSERT INTO links (item_id, url) VALUES (999, 'https://shop.example')");
   });

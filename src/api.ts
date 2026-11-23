@@ -44,8 +44,16 @@ export function getItem(id: number): Promise<Item> {
   return itemRequest(`/api/items/${id}`);
 }
 
-export function addItem(title: string): Promise<Item> {
-  return itemRequest("/api/items", "POST", { title });
+/** Adds an item. A private one is seen only by the person who added it. */
+export function addItem(title: string, isPrivate = false): Promise<Item> {
+  return itemRequest("/api/items", "POST", isPrivate ? { title, isPrivate } : { title });
+}
+
+/** The email of the person signed in, as the server read it from the sign-in token. */
+export async function getMe(): Promise<string> {
+  const response = await fetch("/api/me");
+  if (!response.ok) throw await failure(response);
+  return ((await response.json()) as { email: string }).email;
 }
 
 /** The fields an edit can change. Any left out stay as they are; null clears a date or budget. */
@@ -56,6 +64,8 @@ export type ItemChanges = {
   priority?: Priority;
   neededBy?: string | null;
   budgetCents?: number | null;
+  /** Only the person who added the item may send this. */
+  isPrivate?: boolean;
 };
 
 export function updateItem(id: number, changes: ItemChanges): Promise<Item> {

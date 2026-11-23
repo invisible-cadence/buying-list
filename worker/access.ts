@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
+import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from "jose";
 import type { AppEnv } from "./env";
 
 const TOKEN_HEADER = "Cf-Access-Jwt-Assertion";
@@ -38,13 +38,25 @@ export function normaliseTeamDomain(value: string): string | null {
   return /^https:\/\/[a-z0-9.-]+$/.test(cleaned) ? cleaned : null;
 }
 
+/**
+ * Cleans up an email for comparing: spaces trimmed and lower case, because
+ * the same person can be written with different capitals. Returns null when
+ * it is not something with an @ in it.
+ */
+export function normaliseEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const cleaned = value.trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+$/.test(cleaned) ? cleaned : null;
+}
+
 function isLocalRequest(request: Request): boolean {
   const { hostname } = new URL(request.url);
   return hostname === "localhost" || hostname === "127.0.0.1";
 }
 
 /**
- * Checks the Cloudflare Access token on every request.
+ * Checks the Cloudflare Access token on every request, and records who is
+ * signed in as "viewer" for the routes to read.
  *
  * Access already stops visitors at Cloudflare's edge. This check means the app
  * does not depend on that alone: a request that skipped Access, or came in
@@ -58,6 +70,12 @@ export function requireAccess(keySource: KeySource = remoteKeys) {
     // variable by mistake on the live Worker does nothing: a request for the
     // live address never has a localhost hostname.
     if (c.env.DEV_SKIP_ACCESS === "true" && isLocalRequest(c.req.raw)) {
+      const devViewer = normaliseEmail(c.env.DEV_USER_EMAIL);
+      if (!devViewer) {
+        console.error("Local sign-in is not configured: set DEV_USER_EMAIL in .dev.vars.");
+        return c.json({ error: "Server is not configured." }, 500);
+      }
+      c.set("viewer", devViewer);
       return next();
     }
 
@@ -81,19 +99,30 @@ export function requireAccess(keySource: KeySource = remoteKeys) {
       return c.json({ error: "Not signed in." }, 401);
     }
 
+    let payload: JWTPayload;
     try {
       // jwtVerify checks the signature, the expiry, the issuer (who made the
       // token) and the audience (which application it was made for).
-      await jwtVerify(token, keySource(teamDomain), {
+      ({ payload } = await jwtVerify(token, keySource(teamDomain), {
         issuer: teamDomain,
         audience,
         algorithms: ["RS256"],
-      });
+      }));
     } catch (error) {
       // The reason is logged for the owner and never sent to the caller.
       console.warn("Access token refused:", error instanceof Error ? error.message : error);
       return c.json({ error: "Not signed in." }, 401);
     }
+
+    // A person's token names their email. A service token, made for a
+    // program rather than a person, has none, and nothing in the app is
+    // meant for programs yet, so it is refused.
+    const viewer = normaliseEmail(payload.email);
+    if (!viewer) {
+      console.warn("Access token refused: it has no email, so it is not a person's sign-in.");
+      return c.json({ error: "Not signed in." }, 401);
+    }
+    c.set("viewer", viewer);
 
     return next();
   });
