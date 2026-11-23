@@ -2,9 +2,25 @@
 
 A shared household buying list, installed on your phone, that tracks things from idea to bought and does the product research for you.
 
+## What it looks like
+
+The app as it stands at the end of Phase 3, taken in a phone-sized browser in dark mode, from a local copy filled with invented items. The app follows the phone's light or dark setting.
+
+<p>
+  <img src="docs/screenshots/list.png" alt="The list, grouped by status. Items show their priority, budget and needed-by date, one is tagged Private, and bought items show what was paid and where." width="250">
+  <img src="docs/screenshots/item-page.png" alt="An item's page, showing who added it, its status, and its notes, type, priority, needed-by date and budget." width="250">
+  <img src="docs/screenshots/search-and-filters.png" alt="The filter and sort options opened out, showing only items needed in the next 14 days, soonest first: 3 of 10." width="250">
+</p>
+
+From the left: the list grouped by status, one item's page, and the list narrowed to what is needed soon. Below the part shown, an item's page also holds its links, and buttons to archive or delete it.
+
+<img src="docs/screenshots/demo.gif" alt="A short recording: an item is added, moved to Ready to buy, then marked bought with a price and a shop, and appears under Bought." width="250">
+
+Adding an item, moving it along, and marking it bought.
+
 ## Status
 
-Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The list is grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Each item records who added it, and can be private, so that only that person sees it. Each item has its own page for editing its details and links, and for archiving or deleting it. The list can be searched, filtered by type, status and "needed soon", sorted, and can show archived items. It can be added to a phone's home screen and opens like an app.
+Phases 2 and 3 of the [roadmap](ROADMAP.md) are built, and the app is in real use for a few weeks before Phase 4. The back end is complete: the full item model, the API and a tested database layer. The list is grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Each item records who added it, and can be private, so that only that person sees it. Each item has its own page for editing its details and links, and for archiving or deleting it. The list can be searched, filtered by type, status and "needed soon", sorted, and can show archived items. It can be added to a phone's home screen and opens like an app.
 
 - [`ROADMAP.md`](ROADMAP.md): what is being built, in what order.
 - [`docs/decisions/`](docs/decisions/): why it is being built this way, and what else was considered.
@@ -27,7 +43,7 @@ browser ──▶ Cloudflare Access (sign-in) ──▶ Worker ──▶ D1 data
   - `App.tsx`: loads the list once and holds it, shows the page the address points at, and swaps in each item the server sends back after a change.
   - `route.ts` and `navigation.tsx`: which page to show for an address (`/` for the list, `/items/12` for an item), and moving between pages without a reload, so the phone's back button works. The Worker answers any address that is not a file or an API route with the app's page, which is what lets `/items/12` open directly.
   - `ListPage.tsx`, `QuickAdd.tsx`, `FindBar.tsx`, `StatusSection.tsx` and `ItemRow.tsx`: the list, with its search and filters.
-  - `ItemPage.tsx`, `DetailsForm.tsx` and `LinksSection.tsx`: one item's page.
+  - `ItemPage.tsx`, `DetailsForm.tsx`, `LinksSection.tsx` and `DeleteSection.tsx`: one item's page.
   - `MoveSelect.tsx`, `useStatusMove.ts` and `BoughtForm.tsx`: the Move to menu and its bought form, shared by both pages.
   - Each piece that changes something makes its own request, so it can show "saving" and errors where the person tapped.
   - `api.ts`: the only file that calls the API.
