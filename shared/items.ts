@@ -54,6 +54,13 @@ export type Item = {
   boughtOn: string | null;
   paidCents: number | null;
   boughtFrom: string;
+  /**
+   * The email of the person who added the item, in lower case. Null for items
+   * added before the app recorded who was signed in.
+   */
+  addedBy: string | null;
+  /** A private item is visible only to the person who added it. */
+  isPrivate: boolean;
   /** Set when the item is archived. Archived items leave the list. */
   archivedAt: string | null;
   createdAt: string;

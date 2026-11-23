@@ -12,6 +12,8 @@ import { PRIORITY_LABELS, TYPE_LABELS } from "./labels";
 
 type Props = {
   item: Item;
+  /** True when the viewer added the item, and so may make it private or shared. */
+  canChangePrivacy: boolean;
   /** Called with the item as the server sent it back after a save. */
   onSaved: (item: Item) => void;
 };
@@ -20,7 +22,7 @@ type Props = {
  * The item page's form for everything except status and links. One Save sends
  * only the fields that changed (see itemForm.ts).
  */
-export function DetailsForm({ item, onSaved }: Props) {
+export function DetailsForm({ item, canChangePrivacy, onSaved }: Props) {
   const [values, setValues] = useState(() => formValuesOf(item));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +127,17 @@ export function DetailsForm({ item, onSaved }: Props) {
         inputMode="decimal"
         autoComplete="off"
       />
+
+      {canChangePrivacy && (
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={values.isPrivate}
+            onChange={(event) => set("isPrivate", event.target.checked)}
+          />
+          Private (only you will see it)
+        </label>
+      )}
 
       {error && <p role="alert">{error}</p>}
       {note && <p role="status">{note}</p>}

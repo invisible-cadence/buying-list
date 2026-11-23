@@ -13,6 +13,8 @@ import { useStatusMove } from "./useStatusMove";
 
 type Props = {
   id: number;
+  /** The signed-in person's email, or null while it is not known. */
+  viewer: string | null;
   /** Called with the item as the server sent it back after any change, so the list stays current. */
   onChanged: (item: Item) => void;
 };
@@ -21,7 +23,7 @@ type Props = {
  * One item's page. It loads the item itself, so it also works when opened
  * straight from its address or after a reload.
  */
-export function ItemPage({ id, onChanged }: Props) {
+export function ItemPage({ id, viewer, onChanged }: Props) {
   const [item, setItem] = useState<Item | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -47,7 +49,7 @@ export function ItemPage({ id, onChanged }: Props) {
         <Link to={LIST_PATH}>← Back to list</Link>
       </p>
       {item ? (
-        <ItemDetails item={item} onChanged={handleChanged} />
+        <ItemDetails item={item} viewer={viewer} onChanged={handleChanged} />
       ) : loadError ? (
         <p role="alert">{loadError}</p>
       ) : (
@@ -57,11 +59,18 @@ export function ItemPage({ id, onChanged }: Props) {
   );
 }
 
-function ItemDetails({ item, onChanged }: { item: Item; onChanged: (item: Item) => void }) {
+type DetailsProps = {
+  item: Item;
+  viewer: string | null;
+  onChanged: (item: Item) => void;
+};
+
+function ItemDetails({ item, viewer, onChanged }: DetailsProps) {
   const status = useStatusMove(item, onChanged);
   const [archiving, setArchiving] = useState(false);
   const [archiveError, setArchiveError] = useState<string | null>(null);
   const purchase = item.status === "bought" ? summaryOf(item) : "";
+  const addedByViewer = viewer !== null && item.addedBy === viewer;
 
   async function archive(archived: boolean) {
     setArchiving(true);
@@ -78,6 +87,10 @@ function ItemDetails({ item, onChanged }: { item: Item; onChanged: (item: Item) 
   return (
     <>
       <h1>{item.title}</h1>
+      <p className="details">
+        {addedByLine(item, addedByViewer)}
+        {item.isPrivate && " · Private, only you can see it"}
+      </p>
 
       {item.archivedAt !== null && (
         <div className="notice">
@@ -110,7 +123,7 @@ function ItemDetails({ item, onChanged }: { item: Item; onChanged: (item: Item) 
         {status.error && <p role="alert">{status.error}</p>}
       </section>
 
-      <DetailsForm item={item} onSaved={onChanged} />
+      <DetailsForm item={item} canChangePrivacy={addedByViewer} onSaved={onChanged} />
       <LinksSection item={item} onChanged={onChanged} />
 
       {item.archivedAt === null && (
@@ -129,4 +142,11 @@ function ItemDetails({ item, onChanged }: { item: Item; onChanged: (item: Item) 
       {archiveError && <p role="alert">{archiveError}</p>}
     </>
   );
+}
+
+/** Who added the item, for the line under the title. */
+function addedByLine(item: Item, addedByViewer: boolean): string {
+  if (addedByViewer) return "Added by you";
+  // Items from before the app recorded who was signed in have no adder.
+  return item.addedBy === null ? "Added before names were recorded" : `Added by ${item.addedBy}`;
 }

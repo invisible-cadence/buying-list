@@ -14,6 +14,7 @@ export type FormValues = {
   priority: Priority;
   neededBy: string;
   budget: string;
+  isPrivate: boolean;
 };
 
 /** Fills the form from an item. */
@@ -25,6 +26,7 @@ export function formValuesOf(item: Item): FormValues {
     priority: item.priority,
     neededBy: item.neededBy ?? "",
     budget: item.budgetCents === null ? "" : formatMoney(item.budgetCents),
+    isPrivate: item.isPrivate,
   };
 }
 
@@ -53,5 +55,8 @@ export function changesFrom(
   if (values.priority !== item.priority) changes.priority = values.priority;
   if (neededBy !== item.neededBy) changes.neededBy = neededBy;
   if (budget.cents !== item.budgetCents) changes.budgetCents = budget.cents;
+  // Sent only when changed, because only the person who added the item may
+  // send it at all. Anyone else never sees the tick box, so never changes it.
+  if (values.isPrivate !== item.isPrivate) changes.isPrivate = values.isPrivate;
   return { changes };
 }

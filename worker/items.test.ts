@@ -7,13 +7,17 @@ import { createTestDatabase, type TestDatabase } from "./test-support/database";
 // These tests send requests through the whole app to a real (local) database.
 // The sign-in check is switched off for localhost, as it is during development.
 
+/** Two invented people who share the list. Requests are Alex's unless a test says otherwise. */
+const ALEX = "alex@example.com";
+const SAM = "sam@example.com";
+
 let database: TestDatabase;
 let env: Bindings;
 const app = createApp();
 
 beforeAll(async () => {
   database = await createTestDatabase();
-  env = { DEV_SKIP_ACCESS: "true", DB: database.db } as Bindings;
+  env = { DEV_SKIP_ACCESS: "true", DEV_USER_EMAIL: ALEX, DB: database.db } as Bindings;
 });
 
 afterAll(async () => {
@@ -29,6 +33,7 @@ async function send(
   path: string,
   body?: unknown,
   contentType = "application/json",
+  viewer = ALEX,
 ) {
   return await app.request(
     `http://localhost/api/items${path}`,
@@ -37,9 +42,15 @@ async function send(
       headers: { "Content-Type": contentType },
       body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
     },
-    env,
+    // Locally, who is signed in comes from DEV_USER_EMAIL, so each person is a
+    // different setting.
+    { ...env, DEV_USER_EMAIL: viewer },
   );
 }
+
+/** Sends a request as Sam. */
+const asSam = (method: string, path: string, body?: unknown) =>
+  send(method, path, body, "application/json", SAM);
 
 async function itemFrom(response: Response): Promise<Item> {
   return (await response.json<{ item: Item }>()).item;
@@ -220,6 +231,82 @@ describe("refusing bad requests", () => {
       expect(response.status).toBe(404);
       expect(await response.json()).toEqual({ error: "Not found." });
     }
+  });
+});
+
+describe("who is signed in, and private items", () => {
+  async function alexsSecret(): Promise<Item> {
+    const response = await send("POST", "", { title: "Present for Sam", isPrivate: true });
+    expect(response.status).toBe(201);
+    const item = await itemFrom(response);
+    return itemFrom(await send("POST", `/${item.id}/links`, { url: "https://shop.example/p" }));
+  }
+
+  it("says who is signed in", async () => {
+    const response = await app.request("http://localhost/api/me", {}, env);
+    expect(await response.json()).toEqual({ email: ALEX });
+  });
+
+  it("records the signed-in person as the one who added an item", async () => {
+    expect(await addItem()).toMatchObject({ addedBy: ALEX, isPrivate: false });
+  });
+
+  it("refuses an attempt to say who added an item", async () => {
+    const response = await send("POST", "", { title: "Kettle", addedBy: SAM });
+    expect(response.status).toBe(400);
+  });
+
+  it("answers Not found to anyone else, for every route that takes the item", async () => {
+    const secret = await alexsSecret();
+    const linkId = secret.links[0]!.id;
+    const attempts = [
+      asSam("GET", `/${secret.id}`),
+      asSam("PATCH", `/${secret.id}`, { title: "Found it" }),
+      asSam("PATCH", `/${secret.id}`, { isPrivate: false }),
+      asSam("POST", `/${secret.id}/status`, { status: "bought" }),
+      asSam("POST", `/${secret.id}/archive`),
+      asSam("POST", `/${secret.id}/unarchive`),
+      asSam("POST", `/${secret.id}/links`, { url: "https://shop.example/x" }),
+      asSam("DELETE", `/${secret.id}/links/${linkId}`),
+    ];
+    for (const response of await Promise.all(attempts)) {
+      expect(response.status).toBe(404);
+      // The same answer as for an item that was never there, so nothing is given away.
+      expect(await response.json()).toEqual({ error: "Not found." });
+    }
+    // And Alex's item is exactly as it was.
+    expect(await itemFrom(await send("GET", `/${secret.id}`))).toEqual(secret);
+  });
+
+  it("leaves a private item out of everyone else's list, archived or not", async () => {
+    const secret = await alexsSecret();
+    const sams = async (query: string) =>
+      (await (await asSam("GET", query)).json<{ items: Item[] }>()).items;
+    expect(await sams("")).toEqual([]);
+    expect(await sams("?archived=true")).toEqual([]);
+    const alexs = (await (await send("GET", "")).json<{ items: Item[] }>()).items;
+    expect(alexs.map((i) => i.id)).toEqual([secret.id]);
+  });
+
+  it("explains, with 403, why someone else cannot make a shared item private", async () => {
+    const shared = await addItem();
+    const response = await asSam("PATCH", `/${shared.id}`, { isPrivate: true });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "Only the person who added an item can change whether it is private.",
+    });
+    // Sam can still edit everything else about a shared item.
+    expect((await asSam("PATCH", `/${shared.id}`, { notes: "Blue" })).status).toBe(200);
+  });
+
+  it("lets the person who added an item make it private, and shared again", async () => {
+    const item = await addItem();
+    const hidden = await send("PATCH", `/${item.id}`, { isPrivate: true });
+    expect(await itemFrom(hidden)).toMatchObject({ isPrivate: true });
+    expect((await asSam("GET", `/${item.id}`)).status).toBe(404);
+
+    await send("PATCH", `/${item.id}`, { isPrivate: false });
+    expect((await asSam("GET", `/${item.id}`)).status).toBe(200);
   });
 });
 
