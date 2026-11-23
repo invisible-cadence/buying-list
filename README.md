@@ -4,7 +4,7 @@ A shared household buying list, installed on your phone, that tracks things from
 
 ## Status
 
-Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The list is grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Each item has its own page for editing its details and links, and for archiving it. The list can be searched, filtered by type, status and "needed soon", sorted, and can show archived items. It can be added to a phone's home screen and opens like an app.
+Phase 2 of the [roadmap](ROADMAP.md), in progress. The back end is complete: the full item model, the API and a tested database layer. The list is grouped by status, with a quick-add box and a way to move each item along, including recording a purchase. Each item records who added it, and can be private, so that only that person sees it. Each item has its own page for editing its details and links, and for archiving it. The list can be searched, filtered by type, status and "needed soon", sorted, and can show archived items. It can be added to a phone's home screen and opens like an app.
 
 - [`ROADMAP.md`](ROADMAP.md): what is being built, in what order.
 - [`docs/decisions/`](docs/decisions/): why it is being built this way, and what else was considered.
@@ -37,7 +37,7 @@ browser ──▶ Cloudflare Access (sign-in) ──▶ Worker ──▶ D1 data
   - `items.ts`: the routes. Only the web side: read the request, call the pieces below, send the answer.
   - `validation.ts`: what the API accepts, as [Zod](https://zod.dev) schemas. It never touches the database.
   - `status.ts`: the rules for moving an item between statuses, as a plain function.
-  - `queries/items.ts`: the only file that contains SQL.
+  - `queries/items.ts`: the only file that contains SQL. It is also where private items are enforced: every query that reads or changes an item only matches items that are shared or were added by the person asking.
   - `test-support/`: a real local database for tests.
 - `public/`: files served as they are. `manifest.webmanifest` tells a phone the app's name, icon and how to open it, and `icons/` holds the icon: `icon.svg` is the source, and the PNGs are copies of it at the sizes phones ask for.
 - `shared/`: the few things the front end and the Worker must agree on, such as the longest title. Both import from here.
@@ -47,14 +47,15 @@ browser ──▶ Cloudflare Access (sign-in) ──▶ Worker ──▶ D1 data
 
 ### The API
 
-Every route needs the sign-in token. Anything that changes data must be sent with the header `Content-Type: application/json`, even when there is no body. Errors are JSON, `{ "error": "..." }`, with status 400 for input that is not valid, 404 for an item or link that does not exist, and 415 for a missing JSON header.
+Every route needs the sign-in token, and answers as the person it names: a private item someone else added is "Not found" to you, on every route. Anything that changes data must be sent with the header `Content-Type: application/json`, even when there is no body. Errors are JSON, `{ "error": "..." }`, with status 400 for input that is not valid, 403 for trying to change whether someone else's item is private, 404 for an item or link that does not exist or that you may not see, and 415 for a missing JSON header.
 
 | Route | What it does |
 | --- | --- |
-| `GET /api/items` | Lists items with their links, newest first. Archived items are left out unless you add `?archived=true`. |
+| `GET /api/me` | Who is signed in: `{ "email": "..." }`, as read from the sign-in token. |
+| `GET /api/items` | Lists the items you may see, with their links, newest first. Archived items are left out unless you add `?archived=true`. |
 | `GET /api/items/:id` | One item. |
-| `POST /api/items` | Adds an item. Only `title` is required. Optional: `notes`, `type`, `priority`, `neededBy` (`YYYY-MM-DD`), `budgetCents`. A new item is an idea. |
-| `PATCH /api/items/:id` | Changes any of those fields. Fields left out stay as they are, and `null` clears the date or budget. |
+| `POST /api/items` | Adds an item. Only `title` is required. Optional: `notes`, `type`, `priority`, `neededBy` (`YYYY-MM-DD`), `budgetCents`, `isPrivate`. A new item is an idea, and records you as the person who added it. |
+| `PATCH /api/items/:id` | Changes any of those fields. Fields left out stay as they are, and `null` clears the date or budget. Only the person who added an item may change `isPrivate`. |
 | `POST /api/items/:id/status` | Moves the item to a status: `idea`, `researching`, `decided`, `waiting_for_money`, `ready_to_buy` or `bought`. Any status can move to any other. `bought` also takes optional `boughtOn`, `paidCents` and `boughtFrom`. Moving out of `bought` clears them, and sending `bought` again for an item that is already bought keeps what it has, apart from any detail you send, so a price can be corrected. |
 | `POST /api/items/:id/archive` and `/unarchive` | Hides an item from the list, or brings it back. |
 | `POST /api/items/:id/links` | Adds a link: `url` (must start with `http://` or `https://`) and an optional `label`. |
@@ -73,7 +74,7 @@ npm run db:migrate:local          # creates the local database
 npm run dev                       # opens the app on http://localhost:5173
 ```
 
-Locally the sign-in check is skipped, and only for requests to `localhost` or `127.0.0.1`. That is the `DEV_SKIP_ACCESS` line in `.dev.vars`. If you open the dev server by any other address, such as your computer's network address from a phone, the app answers with a configuration error. That is deliberate.
+Locally the sign-in check is skipped, and only for requests to `localhost` or `127.0.0.1`. That is the `DEV_SKIP_ACCESS` line in `.dev.vars`, and `DEV_USER_EMAIL` says who you are signed in as. To see the app as a second person, for example to check that a private item is hidden, change `DEV_USER_EMAIL` and restart `npm run dev`. If you open the dev server by any other address, such as your computer's network address from a phone, the app answers with a configuration error. That is deliberate.
 
 | Command | What it does |
 | --- | --- |
@@ -97,6 +98,8 @@ You need a free [Cloudflare account](https://dash.cloudflare.com/sign-up) with C
    - `npx wrangler secret put POLICY_AUD`: the Application Audience (AUD) tag, shown on the Access application's overview.
 
 Open the Worker's address. You should be asked to sign in, and then see the list.
+
+To share the list with someone else in your household, add their email to the Access policy (in Zero Trust, under Access, open the application and edit its policy). They sign in with their own email, which is how the app knows who added each item.
 
 ### Put it on a phone
 
@@ -128,6 +131,7 @@ Then reload the page and look for a line starting `Access token refused` or `Acc
 | `TEAM_DOMAIN` | Worker secret | Your Access team address. |
 | `POLICY_AUD` | Worker secret | The Access application's audience tag. |
 | `DEV_SKIP_ACCESS` | `.dev.vars` | Local development only. Skips the sign-in check for `localhost` and `127.0.0.1`. |
+| `DEV_USER_EMAIL` | `.dev.vars` | Local development only. Who you are signed in as while the check is skipped. |
 
 ## Costs
 
@@ -140,7 +144,9 @@ Nothing, on the free plans of Cloudflare Workers, D1 and Access. The figures and
 - Search and filter choices last until the app is reloaded.
 - The app needs a connection. Nothing works offline, and an app on the home screen shows a browser error page when there is no signal.
 - When the sign-in expires, the installed app shows Cloudflare's sign-in page, as the browser does.
-- Everyone who can sign in sees the same list. The database has columns for who added an item and whether it is private, but nothing sets or reads them until Phase 3.
+- Items added before the app recorded who was signed in have no adder. They stay shared, and nobody can make them private.
+- The app shows the other person by their sign-in email, not a name.
+- A private item is hidden from the other person, but anyone with access to the Cloudflare account can still read the database.
 - Two people editing the same item at once: the last save wins.
 - Through the API, the purchase date defaults to today in UTC, which can be a day off late in the evening. The screen avoids this by sending the phone's own date.
 - Prices are whole cents with no currency, because one deployment uses one currency. The screen shows them as plain numbers such as 12.50, and accepts a comma or a dot as the decimal mark.
