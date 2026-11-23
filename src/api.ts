@@ -87,6 +87,16 @@ export function setArchived(id: number, archived: boolean): Promise<Item> {
   return itemRequest(`/api/items/${id}/${archived ? "archive" : "unarchive"}`, "POST");
 }
 
+/** Deletes an item and its links for good. There is no way to bring it back. */
+export async function deleteItem(id: number): Promise<void> {
+  const response = await fetch(`/api/items/${id}`, {
+    method: "DELETE",
+    // The API requires the JSON header on every change, even with no body.
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) throw await failure(response);
+}
+
 export function addLink(id: number, link: { url: string; label?: string }): Promise<Item> {
   return itemRequest(`/api/items/${id}/links`, "POST", link);
 }

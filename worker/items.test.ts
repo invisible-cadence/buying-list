@@ -234,6 +234,30 @@ describe("refusing bad requests", () => {
   });
 });
 
+describe("deleting an item", () => {
+  it("deletes it for good, answering with no content", async () => {
+    const item = await addItem();
+    const response = await send("DELETE", `/${item.id}`);
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe("");
+    expect((await send("GET", `/${item.id}`)).status).toBe(404);
+  });
+
+  it("answers Not found for an item that is not there, or an id that is not a number", async () => {
+    for (const path of ["/999", "/abc"]) {
+      const response = await send("DELETE", path);
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: "Not found." });
+    }
+  });
+
+  it("refuses a delete that does not say it is JSON, like every other change", async () => {
+    const item = await addItem();
+    expect((await send("DELETE", `/${item.id}`, undefined, "text/plain")).status).toBe(415);
+    expect((await send("GET", `/${item.id}`)).status).toBe(200);
+  });
+});
+
 describe("who is signed in, and private items", () => {
   async function alexsSecret(): Promise<Item> {
     const response = await send("POST", "", { title: "Present for Sam", isPrivate: true });
@@ -268,6 +292,7 @@ describe("who is signed in, and private items", () => {
       asSam("POST", `/${secret.id}/unarchive`),
       asSam("POST", `/${secret.id}/links`, { url: "https://shop.example/x" }),
       asSam("DELETE", `/${secret.id}/links/${linkId}`),
+      asSam("DELETE", `/${secret.id}`),
     ];
     for (const response of await Promise.all(attempts)) {
       expect(response.status).toBe(404);
