@@ -116,7 +116,12 @@ You need a free [Cloudflare account](https://dash.cloudflare.com/sign-up) with C
 
 Open the Worker's address. You should be asked to sign in, and then see the list.
 
-To share the list with someone else in your household, add their email to the Access policy (in Zero Trust, under Access, open the application and edit its policy). They sign in with their own email, which is how the app knows who added each item.
+To share the list with someone else in your household:
+
+1. Let them sign in with an emailed code. New Zero Trust accounts start with only the Cloudflare sign-in, which admits members of your Cloudflare account and nobody else ([Cloudflare's note on the change](https://developers.cloudflare.com/changelog/post/2026-06-18-cloudflare-idp-default/)). In Zero Trust, go to **Integrations**, then **Identity providers**, select **Add new identity provider** and choose **One-time PIN** ([Cloudflare's guide](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/one-time-pin/)). Then open the Access application's **Authentication** settings and tick One-time PIN as well as the Cloudflare sign-in.
+2. Add their email to the policy. Open the Access application's policy, select **Add include (OR)**, choose **Emails** and enter their exact address. Leave the existing rule in place: it is what lets you in. Typing their email into the existing "Cloudflare Account Member" rule does not work, because they are not a member of your account.
+
+They then open the app, enter their own email and type the code Cloudflare sends them. Their email is how the app knows who added each item.
 
 ### Put it on a phone
 
